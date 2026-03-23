@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
+/* ───────── Deep Enlightenment Design Tokens ───────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core Palette */
+  --primary-indigo: #1A1F3C;
+  --secondary-gold: #C5A059;
+  --bg-deep: #F8F9FA;
+  --surface-pure: #FFFFFF;
+  --text-slate: #4A4A4A;
+  --text-primary: #1A1F3C;
+
+  /* Accent & Hover */
+  --gold-hover: #D4AF37;
+  --indigo-muted: #2D3250;
+  --divider-grey: #E2E8F0;
+
+  /* Fonts */
+  --font-display: var(--font-plus-jakarta-sans), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
+  /* Shadows */
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-medium: 0 12px 48px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary-indigo: var(--primary-indigo);
+  --color-secondary-gold: var(--secondary-gold);
+  --color-bg-deep: var(--bg-deep);
+  --color-surface-pure: var(--surface-pure);
+  --color-text-slate: var(--text-slate);
+  --color-text-primary: var(--text-primary);
+  --color-gold-hover: var(--gold-hover);
+  --color-indigo-muted: var(--indigo-muted);
+  --color-divider-grey: var(--divider-grey);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-medium: var(--shadow-medium);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ───────── Base Styles ───────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-slate);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--primary-indigo);
+}
+
+/* ───────── UI Elements ───────── */
+.btn-indigo {
+  background: linear-gradient(135deg, #1A1F3C 0%, #2D3250 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.btn-indigo:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 31, 60, 0.2);
+}
+
+.btn-gold {
+  background: var(--secondary-gold);
+  color: white;
+  transition: all 0.2s ease;
+}
+.btn-gold:hover {
+  background: var(--gold-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+}
+
+.surface-card {
+  background: var(--surface-pure);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--divider-grey);
+}
+
+/* ───────── UI Animations ───────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up { animation: fade-up 0.4s ease-out forwards; }
+.animate-slide-down { animation: slide-down 0.2s ease-out forwards; }
+
+/* ───────── Custom Scrollbar ───────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
 }
