@@ -6,6 +6,7 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import "./globals.css";
+import ThemeScript from "@/components/theme/ThemeScript";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -50,7 +51,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${instrumentSans.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
       </body>

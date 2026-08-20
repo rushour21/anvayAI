@@ -24,7 +24,7 @@ export default function ChatHistoryItem({
         color: isActive ? "var(--ink-900)" : "var(--ink-500)",
       }}
       onMouseEnter={(e) => {
-        if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.6)";
+        if (!isActive) e.currentTarget.style.background = "var(--hover-surface)";
       }}
       onMouseLeave={(e) => {
         if (!isActive) e.currentTarget.style.background = "transparent";

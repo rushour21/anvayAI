@@ -38,6 +38,7 @@ export type IconName =
   | "book"
   | "message"
   | "sun"
+  | "moon"
   | "menu"
   | "close"
   | "star"
@@ -207,6 +208,7 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M12 2v2M12 20v2M22 12h-2M4 12H2M19 5l-1.5 1.5M6.5 17.5L5 19M19 19l-1.5-1.5M6.5 6.5L5 5" />
     </>
   ),
+  moon: <path d="M20 13.4A8.2 8.2 0 0 1 10.6 4a8.4 8.4 0 1 0 9.4 9.4z" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   star: (

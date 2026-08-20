@@ -7,7 +7,7 @@ export default function UserChip() {
     <button
       className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors duration-150 cursor-pointer text-left"
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.7)";
+        e.currentTarget.style.background = "var(--hover-surface)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = "transparent";

@@ -1,6 +1,7 @@
 "use client";
 
 import Icon, { type IconName } from "@/components/ui/Icon";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 function IconButton({ label, icon }: { label: string; icon: IconName }) {
   return (
@@ -34,6 +35,7 @@ export default function TopbarActions() {
     <div className="flex items-center gap-0.5">
       <IconButton label="Search chats" icon="search" />
       <IconButton label="Share" icon="share" />
+      <ThemeToggle />
       <IconButton label="Settings" icon="settings" />
     </div>
   );
