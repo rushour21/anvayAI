@@ -5,7 +5,7 @@ import { Message } from "@/types/chat";
 import AgentTrace from "./AgentTrace";
 import SourcesStrip from "./SourcesStrip";
 import MessageActions from "./MessageActions";
-import AnvayMark from "./AnvayMark";
+import AssistantAvatar from "./AssistantAvatar";
 
 export default function MessageBubble({ message }: { message: Message }) {
   const [hovered, setHovered] = useState(false);
@@ -38,7 +38,7 @@ export default function MessageBubble({ message }: { message: Message }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <AnvayMark />
+      <AssistantAvatar />
 
       <div className="flex-1 min-w-0 flex flex-col gap-3">
         {message.traceSteps && message.traceSteps.length > 0 && (

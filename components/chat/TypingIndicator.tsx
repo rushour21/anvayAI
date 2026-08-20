@@ -2,7 +2,7 @@
 
 import { useChatStore } from "@/stores/chatStore";
 import { AGENT_MAP } from "@/constants/agents";
-import AnvayMark from "./AnvayMark";
+import AssistantAvatar from "./AssistantAvatar";
 import AgentTrace from "./AgentTrace";
 
 export default function TypingIndicator() {
@@ -12,7 +12,7 @@ export default function TypingIndicator() {
 
   return (
     <div className="flex gap-3 animate-fade-up">
-      <AnvayMark />
+      <AssistantAvatar />
 
       <div className="flex-1 min-w-0 flex flex-col gap-3">
         {traceSteps.length > 0 && (
