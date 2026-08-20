@@ -5,23 +5,29 @@ import InputToolbar from "./InputToolbar";
 
 export default function InputCard() {
   return (
-    <div
-      className="w-full px-10 pb-8 pt-4 animate-fade-up"
-      style={{ maxWidth: 880, margin: "0 auto", background: "transparent" }}
-    >
-      <div
-        className="p-5 pb-3 border border-divider-grey"
+    <div className="shrink-0 px-4 sm:px-8 pb-5 pt-2">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="mx-auto px-3.5 pt-2.5 pb-2"
         style={{
-          background: "var(--surface-pure)",
-          borderRadius: 24,
+          maxWidth: 760,
+          background: "var(--surface)",
+          border: "1px solid var(--line)",
+          borderRadius: 22,
           boxShadow: "var(--shadow-medium)",
         }}
       >
         <QueryInput />
-        <div className="mt-2 border-t pt-2" style={{ borderColor: "rgba(0,0,0,0.03)" }}>
+        <div className="mt-1.5 pt-1.5" style={{ borderTop: "1px solid var(--line-soft)" }}>
           <InputToolbar />
         </div>
-      </div>
+      </form>
+      <p
+        className="text-center text-[11px] mt-2.5"
+        style={{ color: "var(--ink-300)" }}
+      >
+        Anvay cites its sources. Verify anything that matters.
+      </p>
     </div>
   );
 }

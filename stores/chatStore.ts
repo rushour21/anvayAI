@@ -37,19 +37,17 @@ interface ChatState {
 }
 
 // Mock AI response data
+/* One reference clock for the seeded history. Buckets are derived from
+   differences against this, so server and client agree without reading the
+   clock during render. Real timestamps will come from the API. */
+export const SESSION_START = Date.now();
+
 const MOCK_SOURCES = [
-  { id: "1", url: "https://arxiv.org/paper", domain: "arxiv.org", title: "Research Paper on LLMs", agentColor: "#4A7CF7" },
-  { id: "2", url: "https://github.com/example", domain: "github.com", title: "Open Source Implementation", agentColor: "#10B981" },
-  { id: "3", url: "https://docs.example.com", domain: "docs.example.com", title: "API Documentation", agentColor: "#8B5CF6" },
+  { id: "1", url: "https://arxiv.org", domain: "arxiv.org", title: "Preprint on long-context retrieval", agentColor: "var(--agent-search)" },
+  { id: "2", url: "https://github.com", domain: "github.com", title: "Reference implementation", agentColor: "var(--agent-code)" },
+  { id: "3", url: "https://nature.com", domain: "nature.com", title: "Peer-reviewed benchmark review", agentColor: "var(--agent-validator)" },
 ];
 
-const MOCK_TRACE: TraceStep[] = [
-  { agent: "gateway", status: "complete" },
-  { agent: "memory", status: "complete" },
-  { agent: "search", status: "complete" },
-  { agent: "synthesizer", status: "complete" },
-  { agent: "validator", status: "complete" },
-];
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
@@ -58,10 +56,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activeAgents: [...EMPTY_STATE_AGENTS],
   selectedModel: DEFAULT_MODEL,
   chatHistory: [
-    { id: "1", title: "How does RAG work with vector DBs?", messages: [], createdAt: Date.now() - 3600000, updatedAt: Date.now() - 3600000 },
-    { id: "2", title: "Compare Next.js vs Remix", messages: [], createdAt: Date.now() - 7200000, updatedAt: Date.now() - 7200000 },
-    { id: "3", title: "Explain attention mechanisms", messages: [], createdAt: Date.now() - 86400000, updatedAt: Date.now() - 86400000 },
-    { id: "4", title: "Best practices for API design", messages: [], createdAt: Date.now() - 172800000, updatedAt: Date.now() - 172800000 },
+    { id: "1", title: "How does RAG work with vector DBs?", messages: [], createdAt: SESSION_START - 3600000, updatedAt: SESSION_START - 3600000 },
+    { id: "2", title: "Compare Next.js vs Remix", messages: [], createdAt: SESSION_START - 7200000, updatedAt: SESSION_START - 7200000 },
+    { id: "3", title: "Explain attention mechanisms", messages: [], createdAt: SESSION_START - 86400000, updatedAt: SESSION_START - 86400000 },
+    { id: "4", title: "Best practices for API design", messages: [], createdAt: SESSION_START - 172800000, updatedAt: SESSION_START - 172800000 },
   ],
   activeChatId: null,
 
@@ -147,7 +145,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const aiMsg: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: `That's a great question about "${content}".\n\nBased on my multi-agent research across ${traceAgents.length} modules, here's a comprehensive answer:\n\n**Key Findings:**\n\n1. The topic involves several interconnected concepts that work together in modern systems.\n2. Recent developments have significantly improved performance and reliability.\n3. Best practices suggest a layered approach for optimal results.\n\nThe agents collaborated to verify this information, ensuring accuracy and completeness. Each source was cross-referenced to maintain high confidence in the response.\n\nWould you like me to dive deeper into any specific aspect?`,
+        content: [
+          `Here is what the agents found on "${content}".`,
+          "",
+          `${traceAgents.length} modules ran on this question. Their findings agree on three points:`,
+          "",
+          "1. The core mechanism is well established, and the recent work refines it rather than replacing it.",
+          "2. Measured gains hold up across the benchmarks that were checked, though the margins narrow at scale.",
+          "3. The practical recommendation depends on your latency budget more than on raw accuracy.",
+          "",
+          "The Validator cross-checked each claim against the sources below. Anything it could not ground was dropped rather than included.",
+          "",
+          "Want me to go deeper on any one of these?",
+        ].join("\n"),
         timestamp: Date.now(),
         sources: MOCK_SOURCES,
         traceSteps: traceAgents.map((role) => ({ agent: role, status: "complete" })),

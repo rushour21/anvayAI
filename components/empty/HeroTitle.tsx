@@ -1,31 +1,19 @@
-"use client";
-
 export default function HeroTitle() {
   return (
     <div className="text-center animate-fade-up">
       <h1
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 48,
-          fontWeight: 800,
-          letterSpacing: "-1.5px",
-          color: "var(--primary-indigo)",
-          lineHeight: 1.1,
-        }}
+        className="display-md"
+        style={{ fontSize: "clamp(1.9rem, 3.4vw, 2.6rem)" }}
       >
-        What do you want to know?
+        What do you want to{" "}
+        <span className="serif-accent serif-accent-blue">understand?</span>
       </h1>
       <p
-        className="mt-4 max-w-lg mx-auto"
-        style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 17,
-          fontWeight: 500,
-          color: "var(--text-slate)",
-          opacity: 0.8,
-        }}
+        className="mt-3 mx-auto text-[15px]"
+        style={{ color: "var(--ink-500)", maxWidth: "46ch" }}
       >
-        Your personal multi-agent research assistant. Search, verify, and synthesize in seconds.
+        Pick the agents you want on the job, then ask. They&apos;ll search, check
+        each other, and cite what they find.
       </p>
     </div>
   );

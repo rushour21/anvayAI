@@ -1,28 +1,9 @@
-import Image from "next/image";
+import Wordmark from "@/components/ui/Wordmark";
 
-
-export default function SidebarLogo({ isDark = false }: { isDark?: boolean }) {
+export default function SidebarLogo() {
   return (
-    <div className="flex items-center gap-3 px-1">
-      <div className="flex-shrink-0">
-        <Image
-          src="/asset/logo.png"
-          alt="Anvay AI Logo"
-          width={34}
-          height={34}
-          className="rounded-lg object-contain"
-        />
-      </div>
-      <span
-        className="font-bold tracking-tight"
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 19,
-          color: isDark ? "#FFFFFF" : "var(--text-primary)",
-        }}
-      >
-        Anvay AI
-      </span>
+    <div className="px-2 h-9 flex items-center">
+      <Wordmark size={20} />
     </div>
   );
 }

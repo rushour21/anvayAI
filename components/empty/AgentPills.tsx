@@ -9,13 +9,17 @@ export default function AgentPills() {
   const toggleAgent = useChatStore((s) => s.toggleAgent);
 
   return (
-    <div className="flex flex-wrap gap-2.5 justify-center">
+    <div
+      className="flex flex-wrap gap-2 justify-center"
+      role="group"
+      aria-label="Agents to run"
+    >
       {EMPTY_STATE_AGENTS.map((role) => {
         const info = AGENT_MAP[role];
         return (
           <AgentPill
             key={role}
-            emoji={info.emoji}
+            icon={info.icon}
             label={info.label}
             color={info.color}
             isActive={activeAgents.includes(role)}

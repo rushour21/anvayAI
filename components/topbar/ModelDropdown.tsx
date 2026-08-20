@@ -4,37 +4,42 @@ import { MODELS } from "@/constants/models";
 import { useChatStore } from "@/stores/chatStore";
 import ModelOption from "./ModelOption";
 
-interface ModelDropdownProps {
-  onClose: () => void;
-}
-
-export default function ModelDropdown({ onClose }: ModelDropdownProps) {
+export default function ModelDropdown({ onClose }: { onClose: () => void }) {
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
 
   return (
     <div
-      className="rounded-2xl p-2 border border-divider-grey"
+      role="listbox"
+      aria-label="Select model"
+      className="p-1.5"
       style={{
-        width: 320,
-        background: "var(--surface-pure)",
-        boxShadow: "var(--shadow-medium)",
+        width: 336,
+        background: "var(--surface)",
+        border: "1px solid var(--line)",
+        borderRadius: 18,
+        boxShadow: "var(--shadow-tall)",
       }}
     >
-      <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-        Select Model
+      <p
+        className="px-2.5 pt-2 pb-1.5 text-[11px] font-medium"
+        style={{ color: "var(--ink-400)", letterSpacing: "0.04em" }}
+      >
+        Model
+      </p>
+      <div className="flex flex-col gap-0.5">
+        {MODELS.map((model) => (
+          <ModelOption
+            key={model.id}
+            model={model}
+            isSelected={selectedModel.id === model.id}
+            onClick={() => {
+              setSelectedModel(model);
+              onClose();
+            }}
+          />
+        ))}
       </div>
-      {MODELS.map((model) => (
-        <ModelOption
-          key={model.id}
-          model={model}
-          isSelected={selectedModel.id === model.id}
-          onClick={() => {
-            setSelectedModel(model);
-            onClose();
-          }}
-        />
-      ))}
     </div>
   );
 }

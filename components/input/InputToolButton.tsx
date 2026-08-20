@@ -1,30 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import Icon, { type IconName } from "@/components/ui/Icon";
 
 interface InputToolButtonProps {
   label: string;
-  emoji: string;
-  defaultActive?: boolean;
+  icon: IconName;
+  isActive: boolean;
+  onClick: () => void;
 }
 
-export default function InputToolButton({ label, emoji, defaultActive = false }: InputToolButtonProps) {
-  const [isActive, setIsActive] = useState(defaultActive);
-
+export default function InputToolButton({
+  label,
+  icon,
+  isActive,
+  onClick,
+}: InputToolButtonProps) {
   return (
     <button
-      onClick={() => setIsActive(!isActive)}
-      className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all duration-200 cursor-pointer"
+      type="button"
+      onClick={onClick}
+      aria-pressed={isActive}
+      className="flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full transition-all duration-150 cursor-pointer"
       style={{
-        background: isActive ? "rgba(74,124,247,0.08)" : "rgba(255,255,255,0.3)",
-        border: isActive ? "1px solid rgba(74,124,247,0.2)" : "1px solid rgba(255,255,255,0.5)",
+        background: isActive ? "var(--blue-50)" : "transparent",
+        border: `1px solid ${isActive ? "var(--blue-200)" : "transparent"}`,
         fontSize: 12,
         fontWeight: 500,
-        color: isActive ? "var(--accent-blue)" : "var(--text-muted)",
-        fontFamily: "var(--font-body)",
+        color: isActive ? "var(--blue-700)" : "var(--ink-400)",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) e.currentTarget.style.background = "var(--paper-sunk)";
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) e.currentTarget.style.background = "transparent";
       }}
     >
-      <span style={{ fontSize: 12 }}>{emoji}</span>
+      <Icon name={icon} size={13} />
       {label}
     </button>
   );

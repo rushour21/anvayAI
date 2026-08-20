@@ -1,34 +1,36 @@
 "use client";
 
 import SuggestionCard from "./SuggestionCard";
+import type { IconName } from "@/components/ui/Icon";
 
-const SUGGESTIONS = [
+const SUGGESTIONS: { label: string; icon: IconName; prompt: string }[] = [
   {
     label: "Research",
-    description: "What are the latest breakthroughs in quantum computing?",
+    icon: "globe",
+    prompt: "What changed in long-context retrieval methods this year?",
   },
   {
     label: "Compare",
-    description: "Compare PostgreSQL vs MongoDB for real-time apps",
+    icon: "layers",
+    prompt: "Postgres vs. ClickHouse for event analytics at 10B rows",
   },
   {
     label: "Explain",
-    description: "How does transformer attention mechanism work?",
+    icon: "brain",
+    prompt: "Explain how speculative decoding actually speeds up inference",
   },
   {
     label: "Build",
-    description: "Design a microservices architecture for e-commerce",
+    icon: "code",
+    prompt: "Design a rate limiter that survives a multi-region failover",
   },
 ];
 
 export default function SuggestionGrid() {
   return (
-    <div
-      className="grid gap-3"
-      style={{ gridTemplateColumns: "repeat(2, 1fr)" }}
-    >
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
       {SUGGESTIONS.map((s) => (
-        <SuggestionCard key={s.label} label={s.label} description={s.description} />
+        <SuggestionCard key={s.label} {...s} />
       ))}
     </div>
   );

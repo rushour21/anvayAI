@@ -1,40 +1,50 @@
 "use client";
 
+import Icon, { type IconName } from "@/components/ui/Icon";
+
 interface AgentPillProps {
-  emoji: string;
+  icon: IconName;
   label: string;
   color: string;
   isActive: boolean;
   onClick: () => void;
 }
 
-export default function AgentPill({ emoji, label, color, isActive, onClick }: AgentPillProps) {
+export default function AgentPill({
+  icon,
+  label,
+  color,
+  isActive,
+  onClick,
+}: AgentPillProps) {
   return (
     <button
       onClick={onClick}
-      className="relative flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-200 cursor-pointer overflow-hidden border"
+      aria-pressed={isActive}
+      className="flex items-center gap-2 pl-2.5 pr-3.5 py-2 rounded-full cursor-pointer transition-all duration-200"
       style={{
-        background: isActive ? "var(--primary-indigo)" : "var(--surface-pure)",
-        borderColor: isActive ? "var(--primary-indigo)" : "var(--divider-grey)",
-        boxShadow: isActive ? "0 4px 12px rgba(26, 31, 60, 0.15)" : "var(--shadow-soft)",
+        background: isActive ? "var(--surface)" : "transparent",
+        border: `1px solid ${isActive ? "var(--blue-200)" : "var(--line)"}`,
+        boxShadow: isActive ? "var(--shadow-soft)" : "none",
         fontSize: 13,
-        fontWeight: 600,
-        color: isActive ? "#FFFFFF" : "var(--text-primary)",
-        fontFamily: "var(--font-body)",
+        fontWeight: 500,
+        color: isActive ? "var(--ink-900)" : "var(--ink-400)",
       }}
     >
-      <span className="relative" style={{ fontSize: 16 }}>{emoji}</span>
-      <span className="relative">{label}</span>
-      
-      {/* Subtle accent glow when active */}
-      {isActive && (
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `radial-gradient(circle at center, ${color} 0%, transparent 80%)`,
-          }}
-        />
-      )}
+      <span
+        className="flex items-center justify-center rounded-md shrink-0 transition-colors duration-200"
+        style={{
+          width: 22,
+          height: 22,
+          background: isActive
+            ? `color-mix(in srgb, ${color} 14%, transparent)`
+            : "var(--paper-sunk)",
+          color: isActive ? color : "var(--ink-300)",
+        }}
+      >
+        <Icon name={icon} size={13} />
+      </span>
+      {label}
     </button>
   );
 }

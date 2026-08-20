@@ -6,13 +6,15 @@ import SuggestionGrid from "@/components/empty/SuggestionGrid";
 
 export default function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 px-6 animate-fade-up">
-      <HeroTitle />
-      <div className="mt-10">
-        <AgentPills />
-      </div>
-      <div className="mt-10 w-full" style={{ maxWidth: 560 }}>
-        <SuggestionGrid />
+    <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center justify-center px-6 py-10">
+        <HeroTitle />
+        <div className="mt-8 animate-fade-up delay-1">
+          <AgentPills />
+        </div>
+        <div className="mt-8 w-full animate-fade-up delay-2" style={{ maxWidth: 620 }}>
+          <SuggestionGrid />
+        </div>
       </div>
     </div>
   );

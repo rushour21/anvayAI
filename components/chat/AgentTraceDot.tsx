@@ -1,62 +1,68 @@
 "use client";
 
 import { TraceStatus } from "@/types/agent";
+import Icon, { type IconName } from "@/components/ui/Icon";
 
 interface AgentTraceDotProps {
   label: string;
+  icon: IconName;
   color: string;
   status: TraceStatus;
   index: number;
 }
 
-export default function AgentTraceDot({ label, color, status, index }: AgentTraceDotProps) {
-  // Use professional indigo/gold for trace if needed, but keeping agent colors for identity
+export default function AgentTraceDot({
+  label,
+  icon,
+  color,
+  status,
+  index,
+}: AgentTraceDotProps) {
+  const isPending = status === "pending";
+  const isActive = status === "active";
+
   return (
     <div
-      className="flex flex-col items-center"
+      className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full transition-all duration-300"
       style={{
-        animationDelay: `${index * 150}ms`,
+        background: isActive
+          ? `color-mix(in srgb, ${color} 10%, transparent)`
+          : "transparent",
+        border: `1px solid ${isActive ? `color-mix(in srgb, ${color} 28%, transparent)` : "transparent"}`,
       }}
+      title={label}
     >
-      <div className="relative flex items-center justify-center" style={{ width: 14, height: 14 }}>
-        {status === "active" && (
+      <span
+        className="relative flex items-center justify-center shrink-0"
+        style={{ width: 18, height: 18 }}
+      >
+        {isActive && (
           <span
-            className="absolute rounded-full animate-ping"
-            style={{
-              width: 14,
-              height: 14,
-              background: color,
-              opacity: 0.2,
-            }}
+            className="absolute rounded-full animate-model-pulse"
+            style={{ width: 18, height: 18, background: color }}
           />
         )}
         <span
-          className={`rounded-full transition-all duration-300 ${
-            status !== "pending" ? "animate-dot-pop" : ""
+          className={`relative flex items-center justify-center rounded-full ${
+            !isPending ? "animate-dot-pop" : ""
           }`}
           style={{
-            width: 7,
-            height: 7,
-            background:
-              status === "complete" || status === "active" ? color : "transparent",
-            border:
-              status === "pending"
-                ? `1.5px dashed rgba(0,0,0,0.15)`
-                : `1.5px solid ${color}`,
+            width: 18,
+            height: 18,
+            background: isPending ? "transparent" : `color-mix(in srgb, ${color} 14%, transparent)`,
+            border: isPending ? "1px dashed var(--ink-300)" : "none",
+            color: isPending ? "var(--ink-300)" : color,
+            animationDelay: `${index * 90}ms`,
           }}
-        />
-      </div>
+        >
+          <Icon name={icon} size={10.5} strokeWidth={2} />
+        </span>
+      </span>
       <span
-        className="mt-1.5"
+        className="text-[11px] whitespace-nowrap"
         style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: status === "active" ? color : "var(--text-slate)",
-          opacity: status === "pending" ? 0.4 : 0.8,
-          fontFamily: "var(--font-body)",
-          letterSpacing: "0.4px",
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
+          fontWeight: isActive ? 600 : 500,
+          color: isPending ? "var(--ink-300)" : isActive ? color : "var(--ink-500)",
         }}
       >
         {label}

@@ -1,180 +1,595 @@
 @import "tailwindcss";
 
-/* ───────── Deep Enlightenment Design Tokens ───────── */
+/* ═══════════════════════════════════════════════════════════
+   ANVAY — Electric blue on near-white.
+   Airy, soft, high-key. Blue carries all the emphasis;
+   neutrals are cool-tinted so the blue never looks bolted on.
+   ═══════════════════════════════════════════════════════════ */
+
 :root {
-  /* Core Palette */
-  --primary-indigo: #1A1F3C;
-  --secondary-gold: #C5A059;
-  --bg-deep: #F8F9FA;
-  --surface-pure: #FFFFFF;
-  --text-slate: #4A4A4A;
-  --text-primary: #1A1F3C;
+  /* ── Blue scale — the whole identity ──────────────────── */
+  --blue-700: #1E44C4;
+  --blue-600: #2C5CE6;  /* primary action */
+  --blue-500: #3B6EF5;  /* brand */
+  --blue-400: #5B8AF9;
+  --blue-300: #8FB0FC;
+  --blue-200: #C0D3FE;
+  --blue-100: #E1EAFE;
+  --blue-50:  #F0F5FF;
 
-  /* Accent & Hover */
-  --gold-hover: #D4AF37;
-  --indigo-muted: #2D3250;
-  --divider-grey: #E2E8F0;
+  /* Periwinkle — the blob / gradient family */
+  --peri-600: #4A6FE8;
+  --peri-500: #6D93F0;
+  --peri-400: #92B0F6;
+  --peri-300: #B4C9FA;
+  --peri-200: #D3E0FD;
 
-  /* Fonts */
-  --font-display: var(--font-plus-jakarta-sans), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
+  /* ── Ink — cool near-black, never pure #000 ───────────── */
+  --ink-900: #0E1116;
+  --ink-800: #171B22;
+  --ink-700: #232830;
+  --ink-600: #3C424E;
+  --ink-500: #5A616E;
+  --ink-400: #838A98;
+  --ink-300: #AEB4C0;
+  --ink-200: #D2D6DF;
+  --ink-100: #E8EBF1;
 
-  /* Shadows */
-  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-medium: 0 12px 48px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  /* ── Ground ───────────────────────────────────────────── */
+  --paper:      #F6F8FC;
+  --paper-alt:  #FAFBFE;
+  --paper-sunk: #F1F4FA;
+  --surface:    #FFFFFF;
+  --line:       #E8ECF4;
+  --line-soft:  #F1F4F9;
+  --line-strong:#DCE2EE;
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --text-primary:     var(--ink-900);
+  --text-secondary:   var(--ink-600);
+  --text-slate:       var(--ink-500);
+  --text-muted:       var(--ink-400);
+  --text-placeholder: var(--ink-300);
+  --text-on-blue:     rgba(255, 255, 255, 0.94);
+  --text-on-blue-dim: rgba(255, 255, 255, 0.62);
+
+  /* ── Agent identity ───────────────────────────────────── */
+  /* All pulled toward blue so six agents read as one family,
+     with just enough hue separation to tell apart. */
+  --agent-gateway:     #6366E8;
+  --agent-memory:      #8B5CF0;
+  --agent-search:      #3B6EF5;
+  --agent-code:        #0E9AA7;
+  --agent-rag:         #6D7FF0;
+  --agent-synthesizer: #4F46E5;
+  --agent-validator:   #10A37F;
+
+  /* ── Legacy aliases (nothing breaks mid-refactor) ─────── */
+  --primary-indigo: var(--blue-600);
+  --secondary-gold: var(--blue-500);
+  --gold-hover:     var(--blue-400);
+  --indigo-muted:   var(--blue-500);
+  --bg-deep:        var(--paper);
+  --surface-pure:   var(--surface);
+  --divider-grey:   var(--line);
+  --accent-blue:    var(--blue-500);
+
+  /* ── Fonts ────────────────────────────────────────────── */
+  --font-display: var(--font-instrument-sans), system-ui, sans-serif;
+  --font-serif:   var(--font-instrument-serif), Georgia, serif;
+  --font-body:    var(--font-inter), system-ui, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* ── Elevation — blue-tinted, very soft, high-key ─────── */
+  --shadow-hair:   0 1px 2px rgba(20, 32, 72, 0.04);
+  --shadow-soft:   0 1px 2px rgba(20, 32, 72, 0.04), 0 6px 20px rgba(20, 32, 72, 0.05);
+  --shadow-medium: 0 2px 6px rgba(20, 32, 72, 0.05), 0 14px 36px rgba(20, 32, 72, 0.08);
+  --shadow-tall:   0 6px 14px rgba(20, 32, 72, 0.06), 0 30px 70px rgba(20, 32, 72, 0.12);
+  --shadow-blue:   0 4px 14px rgba(44, 92, 230, 0.30);
+  --shadow-blue-lg:0 10px 30px rgba(44, 92, 230, 0.34);
+
+  /* ── Motion ───────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @theme inline {
-  --color-primary-indigo: var(--primary-indigo);
-  --color-secondary-gold: var(--secondary-gold);
-  --color-bg-deep: var(--bg-deep);
-  --color-surface-pure: var(--surface-pure);
-  --color-text-slate: var(--text-slate);
-  --color-text-primary: var(--text-primary);
-  --color-gold-hover: var(--gold-hover);
-  --color-indigo-muted: var(--indigo-muted);
-  --color-divider-grey: var(--divider-grey);
+  --color-blue-700: var(--blue-700);
+  --color-blue-600: var(--blue-600);
+  --color-blue-500: var(--blue-500);
+  --color-blue-400: var(--blue-400);
+  --color-blue-300: var(--blue-300);
+  --color-blue-200: var(--blue-200);
+  --color-blue-100: var(--blue-100);
+  --color-blue-50:  var(--blue-50);
+
+  --color-peri-600: var(--peri-600);
+  --color-peri-500: var(--peri-500);
+  --color-peri-400: var(--peri-400);
+  --color-peri-300: var(--peri-300);
+  --color-peri-200: var(--peri-200);
+
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-ink-300: var(--ink-300);
+  --color-ink-200: var(--ink-200);
+  --color-ink-100: var(--ink-100);
+
+  --color-paper:      var(--paper);
+  --color-paper-alt:  var(--paper-alt);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-surface:    var(--surface);
+  --color-line:       var(--line);
+  --color-line-soft:  var(--line-soft);
+
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-slate:     var(--text-slate);
+  --color-text-muted:     var(--text-muted);
+
+  /* legacy */
+  --color-primary-indigo: var(--blue-600);
+  --color-secondary-gold: var(--blue-500);
+  --color-bg-deep:        var(--paper);
+  --color-surface-pure:   var(--surface);
+  --color-divider-grey:   var(--line);
+  --color-indigo-muted:   var(--blue-500);
+  --color-gold-hover:     var(--blue-400);
 
   --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
+  --font-serif:   var(--font-serif);
+  --font-body:    var(--font-body);
+  --font-mono:    var(--font-mono);
 
-  --shadow-soft: var(--shadow-soft);
+  --shadow-soft:   var(--shadow-soft);
   --shadow-medium: var(--shadow-medium);
+  --shadow-tall:   var(--shadow-tall);
 }
 
-/* ───────── Base Styles ───────── */
+/* ═══════════════════ Base ═══════════════════ */
+
+* { border-color: var(--line); }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
 body {
-  background: var(--bg-deep);
-  color: var(--text-slate);
+  background: var(--paper);
+  color: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, .font-display {
+h1, h2, h3, h4 {
+  color: var(--text-primary);
   font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--primary-indigo);
+  font-weight: 600;
+  letter-spacing: -0.028em;
 }
 
-/* ───────── UI Elements ───────── */
-.btn-indigo {
-  background: linear-gradient(135deg, #1A1F3C 0%, #2D3250 100%);
-  color: white;
-  transition: all 0.2s ease;
-}
-.btn-indigo:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(26, 31, 60, 0.2);
+::selection {
+  background: var(--blue-200);
+  color: var(--ink-900);
 }
 
-.btn-gold {
-  background: var(--secondary-gold);
-  color: white;
-  transition: all 0.2s ease;
+/* ═══════════════════ Typography ═══════════════════ */
+
+.font-display { font-family: var(--font-display); }
+.font-serif   { font-family: var(--font-serif); font-weight: 400; }
+
+/* The signature move: an italic serif word inside a grotesk headline. */
+.serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  /* Serif italic sits optically small next to a grotesk — nudge it up. */
+  font-size: 1.06em;
 }
-.btn-gold:hover {
-  background: var(--gold-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+.serif-accent-blue { color: var(--blue-500); }
+
+.display-xl {
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  font-weight: 600;
 }
+.display-lg {
+  font-size: clamp(2.1rem, 4.4vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.032em;
+  font-weight: 600;
+}
+.display-md {
+  font-size: clamp(1.6rem, 2.8vw, 2.25rem);
+  line-height: 1.18;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+}
+
+.lede {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-slate);
+}
+
+/* ═══════════════════ Pill badge (eyebrow) ═══════════════════ */
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-hair);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.pill-badge svg { color: var(--blue-500); }
+
+/* ═══════════════════ Surfaces ═══════════════════ */
 
 .surface-card {
-  background: var(--surface-pure);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
   box-shadow: var(--shadow-soft);
-  border: 1px solid var(--divider-grey);
 }
 
-/* ───────── UI Animations ───────── */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+.surface-flat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
 }
 
-/* Hero gradient orbs */
-.hero-orb {
+/* A well cut into the card — used for the mock UI insets */
+.surface-sunk {
+  background: linear-gradient(180deg, var(--paper-alt) 0%, var(--paper-sunk) 100%);
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+}
+
+.surface-blue {
+  background: linear-gradient(150deg, var(--blue-500) 0%, var(--blue-700) 100%);
+  color: var(--text-on-blue);
+  border-radius: 20px;
+}
+
+/* Soft periwinkle wash panel — the CTA / newsletter block */
+.surface-wash {
+  background:
+    radial-gradient(120% 100% at 0% 0%, var(--peri-200) 0%, transparent 55%),
+    radial-gradient(120% 120% at 100% 100%, var(--blue-100) 0%, transparent 60%),
+    var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+}
+
+/* ═══════════════════ Buttons ═══════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out),
+              background 0.18s var(--ease-out), color 0.18s var(--ease-out),
+              border-color 0.18s var(--ease-out);
+}
+.btn:active { transform: translateY(0) scale(0.98); }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--blue-500) 0%, var(--blue-600) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-blue);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-blue-lg);
+}
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-hair);
+}
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue-300);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-on-blue {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+}
+.btn-on-blue:hover { background: rgba(255, 255, 255, 0.24); }
+
+/* Circular icon action — the send / submit arrow */
+.btn-orb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--blue-500) 0%, var(--blue-600) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-blue);
+  cursor: pointer;
+  transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out),
+              opacity 0.18s var(--ease-out);
+}
+.btn-orb:hover:not(:disabled) { transform: scale(1.06); box-shadow: var(--shadow-blue-lg); }
+.btn-orb:active:not(:disabled) { transform: scale(0.96); }
+.btn-orb:disabled {
+  background: var(--ink-100);
+  color: var(--ink-300);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════ Layout ═══════════════════ */
+
+.section-container {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+.section-padding { padding-block: clamp(4rem, 8vw, 7rem); }
+.section-head { max-width: 52rem; margin-inline: auto; text-align: center; }
+.section-head h2 { margin-block: 1rem 0.9rem; }
+.section-head .lede { margin-inline: auto; max-width: 36rem; }
+
+/* ═══════════════════ Hero atmosphere ═══════════════════ */
+
+/* The blue glow rising from the bottom of the hero panel. */
+.hero-wash {
+  background:
+    radial-gradient(75% 50% at 50% 112%, var(--peri-500) 0%, var(--peri-400) 26%, transparent 66%),
+    radial-gradient(55% 40% at 50% 96%, var(--blue-400) 0%, transparent 62%),
+    linear-gradient(180deg, #FFFFFF 0%, #FAFCFF 30%, #E9F0FE 62%, #D3E1FD 100%);
+}
+
+/* Large glossy 3D ribbons at the hero edges. The trick is an extreme
+   asymmetric border-radius plus a steep directional gradient — that
+   combination reads as a lit, curved surface rather than a blob. */
+.petal {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 72% 28% 58% 42% / 34% 66% 34% 66%;
+  filter: blur(1.5px);
   will-change: transform;
-  filter: blur(60px);
+}
+.petal-l {
+  background: linear-gradient(
+    155deg,
+    #EDF3FF 0%,
+    var(--peri-300) 26%,
+    var(--peri-500) 58%,
+    var(--peri-600) 82%,
+    #3E5FD8 100%
+  );
+  animation: petal-float-l 22s var(--ease-in-out) infinite;
+}
+.petal-r {
+  border-radius: 28% 72% 42% 58% / 66% 34% 66% 34%;
+  background: linear-gradient(
+    205deg,
+    #EDF3FF 0%,
+    var(--peri-300) 26%,
+    var(--peri-500) 58%,
+    var(--peri-600) 82%,
+    #3E5FD8 100%
+  );
+  animation: petal-float-r 26s var(--ease-in-out) infinite;
 }
 
-@keyframes hero-gradient-shift {
-  0%   { background-position: 0% 50%; }
-  25%  { background-position: 100% 25%; }
-  50%  { background-position: 50% 100%; }
-  75%  { background-position: 100% 75%; }
-  100% { background-position: 0% 50%; }
+/* The ribbons are decoration, not content. As the column narrows they start
+   competing with the headline, so the whole field fades back. */
+.petal-field { opacity: 1; }
+@media (max-width: 1023px) { .petal-field { opacity: 0.5; } }
+@media (max-width: 640px)  { .petal-field { opacity: 0.32; } }
+
+.orb {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(70px);
+  will-change: transform;
 }
-@keyframes hero-drift-1 {
+.orb-1 { animation: orbit-1 20s var(--ease-in-out) infinite; }
+.orb-2 { animation: orbit-2 26s var(--ease-in-out) infinite; }
+.orb-3 { animation: orbit-3 32s var(--ease-in-out) infinite; }
+
+/* Fade a texture out at the edges so it never hard-stops */
+.mask-fade-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+.mask-fade-x {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+.rule-grid {
+  background-image:
+    linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* ═══════════════════ Animation ═══════════════════ */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes dot-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shimmer {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(320%); }
+}
+@keyframes model-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50%      { transform: scale(2.2); opacity: 0; }
+}
+@keyframes caret-blink {
+  0%, 45%   { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+/* Base rotation lives in the keyframes: an animated `transform` would
+   otherwise clobber any rotation set on the element itself. */
+@keyframes petal-float-l {
+  0%, 100% { transform: translate(0, 0) rotate(-16deg) scale(1); }
+  33%      { transform: translate(26px, -34px) rotate(-9deg) scale(1.04); }
+  66%      { transform: translate(-18px, 28px) rotate(-21deg) scale(0.97); }
+}
+@keyframes petal-float-r {
+  0%, 100% { transform: translate(0, 0) rotate(18deg) scale(1); }
+  33%      { transform: translate(-30px, 30px) rotate(11deg) scale(1.05); }
+  66%      { transform: translate(22px, -26px) rotate(24deg) scale(0.96); }
+}
+@keyframes orbit-1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25%      { transform: translate(60px, 40px) scale(1.05); }
-  50%      { transform: translate(20px, 80px) scale(0.95); }
-  75%      { transform: translate(-40px, 30px) scale(1.02); }
+  50%      { transform: translate(40px, 30px) scale(1.08); }
 }
-
-@keyframes hero-drift-2 {
+@keyframes orbit-2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25%      { transform: translate(-50px, 60px) scale(1.08); }
-  50%      { transform: translate(-80px, -20px) scale(0.96); }
-  75%      { transform: translate(30px, -50px) scale(1.04); }
+  50%      { transform: translate(-36px, 34px) scale(1.06); }
 }
-
-@keyframes hero-drift-3 {
+@keyframes orbit-3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25%      { transform: translate(40px, -60px) scale(1.06); }
-  50%      { transform: translate(-30px, -40px) scale(0.97); }
-  75%      { transform: translate(-60px, 50px) scale(1.03); }
+  50%      { transform: translate(28px, -32px) scale(1.05); }
+}
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
 }
 
-.animate-fade-up { animation: fade-up 0.5s ease-out both; }
-.animate-slide-down { animation: slide-down 0.2s ease-out both; }
+.animate-fade-up     { animation: fade-up 0.6s var(--ease-out) both; }
+.animate-fade-in     { animation: fade-in 0.5s ease-out both; }
+.animate-slide-down  { animation: slide-down 0.18s var(--ease-out) both; }
+.animate-dot-pop     { animation: dot-pop 0.42s var(--ease-out) both; }
+.animate-shimmer     { animation: shimmer 1.6s ease-in-out infinite; }
+.animate-model-pulse { animation: model-pulse 2.4s ease-out infinite; }
+.animate-caret       { animation: caret-blink 1.1s step-end infinite; }
+.animate-marquee     { animation: marquee 34s linear infinite; }
 
-/* Staggered fade-up delays */
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.3s; }
-.delay-4 { animation-delay: 0.4s; }
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.delay-4 { animation-delay: 0.32s; }
+.delay-5 { animation-delay: 0.40s; }
 
-/* Card hover */
 .card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out),
+              border-color 0.28s var(--ease-out);
 }
 .card-hover:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
+  border-color: var(--blue-200);
   box-shadow: var(--shadow-medium);
 }
 
-/* Section spacing */
-.section-padding {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-}
-.section-container {
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-/* ───────── Custom Scrollbar ───────── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ═══════════════════ Scrollbars ═══════════════════ */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 3px;
+  background: var(--ink-200);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.15);
+::-webkit-scrollbar-thumb:hover { background: var(--ink-300); background-clip: content-box; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ink-200);
+  border: none;
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ink-300); }
+
+/* ═══════════════════ Focus ═══════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ═══════════════════ Forms ═══════════════════ */
+
+.field {
+  width: 100%;
+  padding: 0.8rem 1.1rem;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out),
+              background 0.18s var(--ease-out);
+}
+.field::placeholder { color: var(--text-placeholder); }
+.field:focus {
+  background: var(--surface);
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(59, 110, 245, 0.13);
+}
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
 }
