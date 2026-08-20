@@ -79,18 +79,16 @@ export default function Footer() {
           {/* Oversized wordmark — the reference's "GET IN TOUCH" moment */}
           <div className="mt-14 mb-10 select-none flex justify-center">
             <span
-              className="leading-none text-center"
+              className="font-display leading-none text-center"
               style={{
-                fontFamily: "var(--font-serif)",
-                fontStyle: "italic",
-                fontSize: "clamp(4rem, 17vw, 13rem)",
-                fontWeight: 400,
-                letterSpacing: "-0.035em",
-                color: "rgba(255,255,255,0.66)",
-                textShadow: "0 1px 0 rgba(255,255,255,0.35)",
+                fontSize: "clamp(3.4rem, 15vw, 11.5rem)",
+                fontWeight: 600,
+                letterSpacing: "-0.05em",
+                color: "rgba(255,255,255,0.7)",
+                textShadow: "0 1px 0 rgba(255,255,255,0.3)",
               }}
             >
-              Anvay
+              Anvay<span style={{ color: "rgba(255,255,255,0.42)" }}>AI</span>
             </span>
           </div>
 
