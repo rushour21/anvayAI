@@ -14,8 +14,9 @@ export default function ModelsGrid() {
             Every frontier model, <span className="serif-accent serif-accent-blue">one interface.</span>
           </h2>
           <p className="lede">
-            Switch mid-conversation without losing context. Or let the Gateway pick
-            the cheapest model that can still answer correctly.
+            Anthropic, OpenAI, and Google alongside open-weight models that cost
+            nothing to run. Switch mid-conversation without losing context, or let
+            the Gateway pick the cheapest model that can still answer correctly.
           </p>
         </div>
 
@@ -58,6 +59,21 @@ export default function ModelsGrid() {
               <p className="text-[13px] leading-relaxed" style={{ color: "var(--ink-500)" }}>
                 {m.description}
               </p>
+
+              <div
+                className="flex items-center gap-3 mt-4 pt-3 text-[11px] font-mono"
+                style={{ borderTop: "1px solid var(--line-soft)", color: "var(--ink-400)" }}
+              >
+                <span>{m.contextK >= 1000 ? `${m.contextK / 1000}M` : `${m.contextK}K`} ctx</span>
+                <span style={{ color: "var(--ink-200)" }}>|</span>
+                <span>
+                  {m.access === "local"
+                    ? "self-hosted"
+                    : m.access === "router"
+                      ? "via router"
+                      : "direct API"}
+                </span>
+              </div>
             </article>
           ))}
         </div>
