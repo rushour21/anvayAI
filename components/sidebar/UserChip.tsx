@@ -1,61 +1,40 @@
 "use client";
 
-export default function UserChip({ isDark = false }: { isDark?: boolean }) {
+import Icon from "@/components/ui/Icon";
+
+export default function UserChip() {
   return (
-    <div 
-      className="flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors duration-200 cursor-pointer"
+    <button
+      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors duration-150 cursor-pointer text-left"
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)";
+        e.currentTarget.style.background = "rgba(255,255,255,0.7)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = "transparent";
       }}
     >
-      {/* Dynamic Avatar */}
-      <div
-        className="flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold text-[10px]"
+      <span
+        className="shrink-0 rounded-full flex items-center justify-center text-white text-[11px] font-semibold"
         style={{
-          width: 34,
-          height: 34,
-          background: "linear-gradient(135deg, #1A1F3C 0%, #C5A039 100%)",
-          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+          width: 32,
+          height: 32,
+          background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
         }}
       >
         RI
-      </div>
-      <div className="flex flex-col min-w-0">
+      </span>
+      <span className="flex flex-col min-w-0 flex-1">
         <span
-          className="truncate"
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: isDark ? "#FFFFFF" : "var(--text-primary)",
-            fontFamily: "var(--font-body)",
-          }}
+          className="truncate text-[13px] font-medium"
+          style={{ color: "var(--ink-900)" }}
         >
           Rushabh Ingle
         </span>
-        <span
-          style={{
-            fontSize: 11,
-            color: isDark ? "rgba(255,255,255,0.5)" : "var(--text-slate)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          Pro Plan
+        <span className="text-[11px]" style={{ color: "var(--ink-400)" }}>
+          Pro plan
         </span>
-      </div>
-      <button
-        className="ml-auto p-1.5 rounded-lg transition-colors duration-200 cursor-pointer"
-        style={{ color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }}
-        aria-label="Settings"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <circle cx="3" cy="8" r="1.5" />
-          <circle cx="8" cy="8" r="1.5" />
-          <circle cx="13" cy="8" r="1.5" />
-        </svg>
-      </button>
-    </div>
+      </span>
+      <Icon name="dots" size={16} style={{ color: "var(--ink-300)" }} />
+    </button>
   );
 }

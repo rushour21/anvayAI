@@ -1,6 +1,8 @@
 "use client";
 
 import { ModelMeta } from "@/types/llm";
+import { PROVIDER_LABEL } from "@/constants/models";
+import Icon from "@/components/ui/Icon";
 
 interface ModelOptionProps {
   model: ModelMeta;
@@ -12,67 +14,60 @@ export default function ModelOption({ model, isSelected, onClick }: ModelOptionP
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer mb-0.5"
-      style={{
-        background: isSelected ? "rgba(26, 31, 60, 0.05)" : "transparent",
-        fontFamily: "var(--font-body)",
-      }}
+      role="option"
+      aria-selected={isSelected}
+      className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl transition-colors duration-150 cursor-pointer text-left"
+      style={{ background: isSelected ? "var(--blue-50)" : "transparent" }}
       onMouseEnter={(e) => {
-        if (!isSelected) e.currentTarget.style.background = "rgba(0,0,0,0.025)";
+        if (!isSelected) e.currentTarget.style.background = "var(--paper-sunk)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = isSelected ? "rgba(26, 31, 60, 0.05)" : "transparent";
+        e.currentTarget.style.background = isSelected ? "var(--blue-50)" : "transparent";
       }}
     >
-      {/* Provider icon square */}
-      <div
-        className="flex-shrink-0 rounded-lg flex items-center justify-center"
+      <span
+        className="shrink-0 rounded-lg flex items-center justify-center font-mono text-[12px] font-bold"
         style={{
-          width: 36,
-          height: 36,
-          background: isSelected ? "var(--primary-indigo)" : `${model.iconColor}15`,
-          color: isSelected ? "white" : model.iconColor,
-          fontSize: 14,
-          fontWeight: 700,
-          fontFamily: "var(--font-mono)",
+          width: 32,
+          height: 32,
+          background: `color-mix(in srgb, ${model.iconColor} 14%, transparent)`,
+          color: model.iconColor,
         }}
       >
-        {model.provider[0].toUpperCase()}
-      </div>
-      <div className="flex flex-col items-start min-w-0 flex-1">
-        <span
-          className="truncate"
-          style={{ 
-            fontSize: 13.5, 
-            fontWeight: 600, 
-            color: isSelected ? "var(--primary-indigo)" : "var(--text-primary)" 
-          }}
-        >
-          {model.name}
+        {PROVIDER_LABEL[model.provider]?.[0] ?? model.provider[0].toUpperCase()}
+      </span>
+
+      <span className="flex flex-col min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span
+            className="truncate text-[13.5px] font-medium"
+            style={{ color: "var(--ink-900)" }}
+          >
+            {model.name}
+          </span>
+          <span
+            className="shrink-0 px-1.5 py-px rounded text-[9.5px] font-semibold uppercase tracking-wide"
+            style={{
+              color: model.tagColor,
+              background: `color-mix(in srgb, ${model.tagColor} 13%, transparent)`,
+            }}
+          >
+            {model.tag}
+          </span>
         </span>
-        <span
-          className="truncate"
-          style={{ fontSize: 11.5, color: "var(--text-slate)", opacity: 0.7 }}
-        >
+        <span className="truncate text-[11.5px]" style={{ color: "var(--ink-400)" }}>
           {model.description}
         </span>
-      </div>
-      {/* Tag */}
-      {model.tag && (
-        <span
-          className="flex-shrink-0 px-2 py-0.5 rounded-md"
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.4px",
-            textTransform: "uppercase",
-            color: model.tagColor,
-            background: `${model.tagColor}15`,
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          {model.tag}
-        </span>
+      </span>
+
+      {isSelected && (
+        <Icon
+          name="check"
+          size={15}
+          strokeWidth={2.4}
+          className="shrink-0"
+          style={{ color: "var(--blue-600)" }}
+        />
       )}
     </button>
   );

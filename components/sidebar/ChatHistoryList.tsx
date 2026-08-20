@@ -1,67 +1,62 @@
 "use client";
 
-import { useChatStore } from "@/stores/chatStore";
+import { useChatStore, SESSION_START } from "@/stores/chatStore";
 import ChatHistoryItem from "./ChatHistoryItem";
+
+const DAY = 86_400_000;
 
 export default function ChatHistoryList() {
   const chatHistory = useChatStore((s) => s.chatHistory);
   const activeChatId = useChatStore((s) => s.activeChatId);
   const setActiveChatId = useChatStore((s) => s.setActiveChatId);
 
-  // Group by relative time
-  const now = Date.now();
-  const today = chatHistory.filter((c) => now - c.createdAt < 86400000);
-  const yesterday = chatHistory.filter(
-    (c) => now - c.createdAt >= 86400000 && now - c.createdAt < 172800000
-  );
-  const older = chatHistory.filter((c) => now - c.createdAt >= 172800000);
+  /* Bucketed against the store's fixed reference clock rather than a live
+     Date.now(), which would be impure in render and desync hydration. */
+  const now = SESSION_START;
+  const groups = [
+    { label: "Today", items: chatHistory.filter((c) => now - c.createdAt < DAY) },
+    {
+      label: "Yesterday",
+      items: chatHistory.filter(
+        (c) => now - c.createdAt >= DAY && now - c.createdAt < 2 * DAY
+      ),
+    },
+    {
+      label: "Earlier",
+      items: chatHistory.filter((c) => now - c.createdAt >= 2 * DAY),
+    },
+  ].filter((g) => g.items.length > 0);
 
-  const sectionLabel = (text: string) => (
-    <div
-      className="px-2 pt-4 pb-1.5"
-      style={{
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: "0.8px",
-        textTransform: "uppercase" as const,
-        color: "rgba(255, 255, 255, 0.4)",
-        fontFamily: "var(--font-body)",
-      }}
-    >
-      {text}
-    </div>
-  );
-
-  const renderGroup = (items: typeof chatHistory) =>
-    items.map((chat) => (
-      <ChatHistoryItem
-        key={chat.id}
-        title={chat.title}
-        isActive={chat.id === activeChatId}
-        onClick={() => setActiveChatId(chat.id)}
-      />
-    ));
+  if (groups.length === 0) {
+    return (
+      <p className="px-2.5 py-6 text-[13px]" style={{ color: "var(--ink-400)" }}>
+        No conversations yet.
+      </p>
+    );
+  }
 
   return (
-    <div>
-      {today.length > 0 && (
-        <>
-          {sectionLabel("Today")}
-          {renderGroup(today)}
-        </>
-      )}
-      {yesterday.length > 0 && (
-        <>
-          {sectionLabel("Yesterday")}
-          {renderGroup(yesterday)}
-        </>
-      )}
-      {older.length > 0 && (
-        <>
-          {sectionLabel("Previous")}
-          {renderGroup(older)}
-        </>
-      )}
+    <div className="flex flex-col gap-1">
+      {groups.map((g) => (
+        <section key={g.label}>
+          <h3
+            className="px-2.5 pt-4 pb-1.5 text-[11px] font-medium"
+            style={{ color: "var(--ink-400)", letterSpacing: "0.04em" }}
+          >
+            {g.label}
+          </h3>
+          <div className="flex flex-col gap-0.5">
+            {g.items.map((chat) => (
+              <ChatHistoryItem
+                key={chat.id}
+                title={chat.title}
+                isActive={chat.id === activeChatId}
+                onClick={() => setActiveChatId(chat.id)}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

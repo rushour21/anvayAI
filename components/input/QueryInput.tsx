@@ -7,7 +7,7 @@ import SendButton from "./SendButton";
 
 export default function QueryInput() {
   const [value, setValue] = useState("");
-  const { textareaRef, resize } = useAutoResize(5);
+  const { textareaRef, resize } = useAutoResize(6);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isStreaming = useChatStore((s) => s.isStreaming);
 
@@ -16,20 +16,19 @@ export default function QueryInput() {
     if (!trimmed || isStreaming) return;
     sendMessage(trimmed);
     setValue("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
   }, [value, isStreaming, sendMessage, textareaRef]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    /* Enter sends; Shift+Enter and Cmd/Ctrl+Enter both stay available. */
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
   return (
-    <div className="flex items-end gap-3">
+    <div className="flex items-end gap-2.5">
       <textarea
         ref={textareaRef}
         value={value}
@@ -38,16 +37,15 @@ export default function QueryInput() {
           resize();
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Ask anything — agents will collaborate on your answer…"
+        placeholder="Ask anything — agents will collaborate on it"
         rows={1}
-        className="flex-1 resize-none bg-transparent outline-none"
+        aria-label="Message"
+        className="flex-1 resize-none bg-transparent outline-none text-[14.5px]"
         style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 15,
-          fontWeight: 400,
-          color: "var(--text-primary)",
+          color: "var(--ink-900)",
           lineHeight: "22px",
-          maxHeight: 110,
+          maxHeight: 132,
+          paddingBlock: 6,
         }}
       />
       <SendButton onClick={handleSend} disabled={!value.trim() || isStreaming} />

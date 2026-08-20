@@ -1,47 +1,51 @@
 "use client";
 
 import { useChatStore } from "@/stores/chatStore";
+import Icon, { type IconName } from "@/components/ui/Icon";
 
 interface SuggestionCardProps {
   label: string;
-  description: string;
+  icon: IconName;
+  prompt: string;
 }
 
-export default function SuggestionCard({ label, description }: SuggestionCardProps) {
+export default function SuggestionCard({ label, icon, prompt }: SuggestionCardProps) {
   const sendMessage = useChatStore((s) => s.sendMessage);
 
   return (
     <button
-      onClick={() => sendMessage(description)}
-      className="text-left p-5 rounded-2xl transition-all duration-300 cursor-pointer group surface-card hover:shadow-medium hover:-translate-y-1"
+      onClick={() => sendMessage(prompt)}
+      className="group text-left p-4 rounded-2xl transition-all duration-200 cursor-pointer"
       style={{
-        minWidth: 240,
+        background: "var(--surface)",
+        border: "1px solid var(--line)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--blue-200)";
+        e.currentTarget.style.boxShadow = "var(--shadow-soft)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--line)";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "none";
       }}
     >
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "1px",
-          textTransform: "uppercase" as const,
-          color: "var(--secondary-gold)",
-          fontFamily: "var(--font-display)",
-        }}
+      <span className="flex items-center gap-1.5 mb-2">
+        <Icon name={icon} size={13} style={{ color: "var(--blue-500)" }} />
+        <span
+          className="text-[11px] font-medium uppercase"
+          style={{ color: "var(--ink-400)", letterSpacing: "0.06em" }}
+        >
+          {label}
+        </span>
+      </span>
+      <span
+        className="block text-[13.5px] leading-snug"
+        style={{ color: "var(--ink-700)" }}
       >
-        {label}
-      </div>
-      <div
-        className="mt-2"
-        style={{
-          fontSize: 14,
-          fontWeight: 500,
-          color: "var(--text-slate)",
-          lineHeight: 1.5,
-          fontFamily: "var(--font-body)",
-        }}
-      >
-        {description}
-      </div>
+        {prompt}
+      </span>
     </button>
   );
 }

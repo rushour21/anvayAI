@@ -1,36 +1,47 @@
 "use client";
 
-export default function MessageActions() {
-  const actions = [
-    { label: "Copy", icon: "📋" },
-    { label: "Retry", icon: "🔄" },
-    { label: "Share", icon: "📤" },
+import { useState } from "react";
+import Icon, { type IconName } from "@/components/ui/Icon";
+
+export default function MessageActions({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard unavailable (insecure context) — leave the label alone */
+    }
+  };
+
+  const actions: { label: string; icon: IconName; onClick?: () => void }[] = [
+    { label: copied ? "Copied" : "Copy", icon: copied ? "check" : "copy", onClick: copy },
+    { label: "Retry", icon: "refresh" },
+    { label: "Share", icon: "share" },
   ];
 
   return (
-    <div className="flex items-center gap-1 animate-fade-up">
-      {actions.map((action) => (
+    <div className="flex items-center gap-0.5">
+      {actions.map((a) => (
         <button
-          key={action.label}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer"
-          style={{
-            background: "rgba(255,255,255,0.4)",
-            border: "1px solid rgba(255,255,255,0.5)",
-            fontSize: 11,
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
+          key={a.label}
+          onClick={a.onClick}
+          title={a.label}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-lg transition-colors duration-150 cursor-pointer"
+          style={{ background: "transparent", color: "var(--ink-400)", fontSize: 11.5 }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.7)";
-            e.currentTarget.style.color = "var(--text-secondary)";
+            e.currentTarget.style.background = "var(--paper-sunk)";
+            e.currentTarget.style.color = "var(--ink-700)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.4)";
-            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--ink-400)";
           }}
         >
-          <span style={{ fontSize: 11 }}>{action.icon}</span>
-          {action.label}
+          <Icon name={a.icon} size={13} />
+          {a.label}
         </button>
       ))}
     </div>

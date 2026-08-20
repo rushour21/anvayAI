@@ -1,58 +1,51 @@
 "use client";
 
 import { Source } from "@/types/chat";
+import Icon from "@/components/ui/Icon";
 
-interface SourceChipProps {
-  source: Source;
-}
-
-export default function SourceChip({ source }: SourceChipProps) {
+export default function SourceChip({ source, index }: { source: Source; index: number }) {
   return (
     <a
       href={source.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all duration-300 no-underline border border-divider-grey"
+      className="group flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-xl no-underline transition-all duration-200"
       style={{
-        background: "var(--surface-pure)",
-        boxShadow: "var(--shadow-soft)",
-        borderLeft: `3px solid ${source.agentColor}`,
+        background: "var(--surface)",
+        border: "1px solid var(--line)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow = "var(--shadow-medium)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.borderColor = "var(--blue-200)";
+        e.currentTarget.style.transform = "translateY(-1px)";
         e.currentTarget.style.boxShadow = "var(--shadow-soft)";
       }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--line)";
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+      title={source.title}
     >
-      {/* Favicon circle */}
-      <div
-        className="flex items-center justify-center rounded-full flex-shrink-0"
-        style={{
-          width: 18,
-          height: 18,
-          background: `${source.agentColor}15`,
-          fontSize: 9,
-          fontWeight: 700,
-          color: source.agentColor,
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        {source.domain[0].toUpperCase()}
-      </div>
       <span
+        className="shrink-0 flex items-center justify-center rounded-md font-mono text-[9px] font-bold"
         style={{
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          fontFamily: "var(--font-body)",
-          opacity: 0.9,
+          width: 17,
+          height: 17,
+          background: `color-mix(in srgb, ${source.agentColor} 14%, transparent)`,
+          color: source.agentColor,
         }}
       >
+        {index + 1}
+      </span>
+      <span className="text-[11.5px] font-medium" style={{ color: "var(--ink-700)" }}>
         {source.domain}
       </span>
+      <Icon
+        name="arrowUpRight"
+        size={11}
+        className="opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ color: "var(--ink-400)" }}
+      />
     </a>
   );
 }
