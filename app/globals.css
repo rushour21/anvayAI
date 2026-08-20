@@ -88,9 +88,157 @@
   --shadow-blue:   0 4px 14px rgba(44, 92, 230, 0.30);
   --shadow-blue-lg:0 10px 30px rgba(44, 92, 230, 0.34);
 
+  /* ── Interaction ──────────────────────────────────────── */
+  --hover-surface: rgba(255, 255, 255, 0.7);
+  --shimmer:       rgba(255, 255, 255, 0.95);
+  --glass:         rgba(255, 255, 255, 0.78);
+
   /* ── Motion ───────────────────────────────────────────── */
   --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK
+   Not an inversion. Surfaces step *up* in lightness rather than
+   relying on shadow (shadows don't read on dark), the ink scale
+   flips end-for-end, and the blue scale keeps its *usage*
+   semantics: saturated where it fills behind white text, light
+   where it's text on dark, and dark-tinted where it was a pale
+   wash. Applied on any [data-theme="dark"] element, so a subtree
+   can opt back out.
+   ═══════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  /* Blue — reads by role, not by literal lightness */
+  --blue-700: #9CBAFD;  /* strongest accent text */
+  --blue-600: #85A9FB;  /* links, accent text */
+  --blue-500: #4A7AF7;  /* fills behind white text */
+  --blue-400: #6D97FA;
+  --blue-300: #3E5486;  /* focus rings, active borders */
+  --blue-200: #35486E;  /* subtle borders */
+  --blue-100: #1E2942;  /* pale fill */
+  --blue-50:  #161E30;  /* palest fill */
+
+  /* Ink flips end-for-end */
+  --ink-900: #F3F5F9;
+  --ink-800: #E5E9F1;
+  --ink-700: #D3D8E3;
+  --ink-600: #AFB7C7;
+  --ink-500: #8C95A7;
+  --ink-400: #6D7589;
+  --ink-300: #4F5769;
+  --ink-200: #353D4D;
+  --ink-100: #232A38;
+
+  /* Ground — cool, never pure black */
+  --paper:      #0C0F16;
+  --paper-alt:  #10141C;
+  --paper-sunk: #161B25;
+  --surface:    #141922;
+  --line:       #242B3A;
+  --line-soft:  #1C222E;
+  --line-strong:#2F3849;
+
+  --text-primary:     var(--ink-900);
+  --text-secondary:   var(--ink-600);
+  --text-slate:       var(--ink-500);
+  --text-muted:       var(--ink-400);
+  --text-placeholder: var(--ink-300);
+
+  /* Agents lifted for contrast against a dark ground */
+  --agent-gateway:     #8B8DF2;
+  --agent-memory:      #A98BF7;
+  --agent-search:      #6D97FA;
+  --agent-code:        #3ABAC6;
+  --agent-rag:         #8E9CF6;
+  --agent-synthesizer: #7B74F0;
+  --agent-validator:   #3CC79E;
+
+  --divider-grey: var(--line);
+  --accent-blue:  var(--blue-500);
+  --bg-deep:      var(--paper);
+  --surface-pure: var(--surface);
+
+  /* Depth comes from black, plus a hairline to define the edge */
+  --shadow-hair:   0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-soft:   0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 20px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.42);
+  --shadow-tall:   0 6px 14px rgba(0, 0, 0, 0.45), 0 30px 70px rgba(0, 0, 0, 0.55);
+  --shadow-blue:   0 4px 14px rgba(44, 92, 230, 0.4);
+  --shadow-blue-lg:0 10px 30px rgba(44, 92, 230, 0.5);
+
+  --hover-surface: rgba(255, 255, 255, 0.06);
+  --shimmer:       rgba(255, 255, 255, 0.10);
+  --glass:         rgba(20, 25, 34, 0.82);
+
+  color-scheme: dark;
+}
+
+/* Explicit light values, so a subtree can opt back out of dark — the
+   landing page forces this, since its blue wash is designed for light.
+   Mirrors exactly the keys the dark block overrides. */
+[data-theme="light"] {
+  --blue-700: #1E44C4;
+  --blue-600: #2C5CE6;
+  --blue-500: #3B6EF5;
+  --blue-400: #5B8AF9;
+  --blue-300: #8FB0FC;
+  --blue-200: #C0D3FE;
+  --blue-100: #E1EAFE;
+  --blue-50:  #F0F5FF;
+
+  --ink-900: #0E1116;
+  --ink-800: #171B22;
+  --ink-700: #232830;
+  --ink-600: #3C424E;
+  --ink-500: #5A616E;
+  --ink-400: #838A98;
+  --ink-300: #AEB4C0;
+  --ink-200: #D2D6DF;
+  --ink-100: #E8EBF1;
+
+  --paper:      #F6F8FC;
+  --paper-alt:  #FAFBFE;
+  --paper-sunk: #F1F4FA;
+  --surface:    #FFFFFF;
+  --line:       #E8ECF4;
+  --line-soft:  #F1F4F9;
+  --line-strong:#DCE2EE;
+
+  --text-primary:     var(--ink-900);
+  --text-secondary:   var(--ink-600);
+  --text-slate:       var(--ink-500);
+  --text-muted:       var(--ink-400);
+  --text-placeholder: var(--ink-300);
+
+  --agent-gateway:     #6366E8;
+  --agent-memory:      #8B5CF0;
+  --agent-search:      #3B6EF5;
+  --agent-code:        #0E9AA7;
+  --agent-rag:         #6D7FF0;
+  --agent-synthesizer: #4F46E5;
+  --agent-validator:   #10A37F;
+
+  --divider-grey: var(--line);
+  --accent-blue:  var(--blue-500);
+  --bg-deep:      var(--paper);
+  --surface-pure: var(--surface);
+
+  --shadow-hair:   0 1px 2px rgba(20, 32, 72, 0.04);
+  --shadow-soft:   0 1px 2px rgba(20, 32, 72, 0.04), 0 6px 20px rgba(20, 32, 72, 0.05);
+  --shadow-medium: 0 2px 6px rgba(20, 32, 72, 0.05), 0 14px 36px rgba(20, 32, 72, 0.08);
+  --shadow-tall:   0 6px 14px rgba(20, 32, 72, 0.06), 0 30px 70px rgba(20, 32, 72, 0.12);
+  --shadow-blue:   0 4px 14px rgba(44, 92, 230, 0.30);
+  --shadow-blue-lg:0 10px 30px rgba(44, 92, 230, 0.34);
+
+  --hover-surface: rgba(255, 255, 255, 0.7);
+  --shimmer:       rgba(255, 255, 255, 0.95);
+  --glass:         rgba(255, 255, 255, 0.78);
+
+  color-scheme: light;
 }
 
 @theme inline {
@@ -161,12 +309,19 @@ html {
 
 body {
   background: var(--paper);
+  transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
   color: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* The landing forces its subtree light. Keep the document ground in
+   agreement, or overscroll reveals the dark theme behind it. */
+body:has(> main[data-theme="light"]) {
+  background: #F6F8FC;
 }
 
 h1, h2, h3, h4 {

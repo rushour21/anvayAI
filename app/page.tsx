@@ -10,7 +10,7 @@ import Footer from "@/components/landing/Footer";
 
 export default function LandingPage() {
   return (
-    <main style={{ background: "var(--paper)" }}>
+    <main data-theme="light" style={{ background: "var(--paper)" }}>
       <Navbar />
       <Hero />
       <FeaturesGrid />

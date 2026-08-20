@@ -34,7 +34,7 @@ export default function TypingIndicator() {
                 style={{
                   width: "45%",
                   background:
-                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent)",
+                    "linear-gradient(90deg, transparent, var(--shimmer), transparent)",
                   animationDelay: `${i * 0.14}s`,
                 }}
               />
