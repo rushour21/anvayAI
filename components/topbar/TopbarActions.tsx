@@ -36,7 +36,7 @@ export default function TopbarActions() {
       <IconButton label="Search chats" icon="search" />
       <IconButton label="Share" icon="share" />
       <ThemeToggle />
-      <IconButton label="Settings" icon="settings" />
+      <IconButton label="Settings" icon="sliders" />
     </div>
   );
 }

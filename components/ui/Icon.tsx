@@ -28,6 +28,7 @@ export type IconName =
   | "refresh"
   | "share"
   | "settings"
+  | "sliders"
   | "chevronDown"
   | "check"
   | "upload"
@@ -152,8 +153,16 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   settings: (
     <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 3v2M12 19v2M21 12h-2M5 12H3M18.4 5.6l-1.5 1.5M7.1 16.9l-1.5 1.5M18.4 18.4l-1.5-1.5M7.1 7.1L5.6 5.6" />
+      <circle cx="12" cy="12" r="3.1" />
+      <path d="M12 2.4l1.7 2.3 2.8-.6.5 2.8 2.6 1.2-1.4 2.5 1.4 2.5-2.6 1.2-.5 2.8-2.8-.6L12 21.6l-1.7-2.3-2.8.6-.5-2.8-2.6-1.2 1.4-2.5-1.4-2.5 2.6-1.2.5-2.8 2.8.6z" />
+    </>
+  ),
+  sliders: (
+    <>
+      <path d="M4 8h8M16.5 8H20" />
+      <circle cx="14.2" cy="8" r="2.3" />
+      <path d="M4 16h3.5M12 16h8" />
+      <circle cx="9.8" cy="16" r="2.3" />
     </>
   ),
   chevronDown: <path d="M6 9.5l6 6 6-6" />,
