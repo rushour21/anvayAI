@@ -516,7 +516,7 @@ h1, h2, h3, h4 {
   padding-inline: 1.5rem;
 }
 .section-padding { padding-block: clamp(4rem, 8vw, 7rem); }
-.section-head { max-width: 52rem; margin-inline: auto; text-align: center; }
+.section-head { max-width: 60rem; margin-inline: auto; text-align: center; }
 .section-head h2 { margin-block: 1rem 0.9rem; }
 .section-head .lede { margin-inline: auto; max-width: 36rem; }
 

@@ -5,7 +5,11 @@ import OAuthButtons from "@/components/auth/OAuthButtons";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
+    <main
+      data-theme="light"
+      className="min-h-dvh flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden"
+      style={{ background: "var(--paper)" }}
+    >
       {/* Same atmosphere as the hero, dialled well down */}
       <div
         className="orb orb-1"
@@ -114,6 +118,6 @@ export default function LoginPage() {
           Back to home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

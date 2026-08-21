@@ -3,9 +3,10 @@ import Icon from "@/components/ui/Icon";
 import Wordmark from "@/components/ui/Wordmark";
 
 const navGroups = [
-  { label: "Features", href: "#features" },
-  { label: "Agents", href: "#agents" },
-  { label: "Models", href: "#models" },
+  { label: "Product", href: "#features" },
+  { label: "How it works", href: "#how" },
+  { label: "See it", href: "#demo" },
+  { label: "Who it's for", href: "#audience" },
   { label: "FAQ", href: "#faq" },
 ];
 
