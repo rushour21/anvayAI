@@ -5,24 +5,28 @@ import Icon from "@/components/ui/Icon";
 
 const faqs = [
   {
-    q: "How is this different from just using ChatGPT?",
-    a: "A single model answers from one pass of its own reasoning. Anvay decomposes your question, runs specialised agents against it — live search, your documents, a code sandbox — then has a separate validator check each claim against its source before you see it.",
+    q: "How is this different from a normal AI chatbot?",
+    a: "A chatbot answers from memory and sounds equally confident whether it is right or wrong. Anvay looks things up first, shows you where each part of the answer came from, and flags anything it could not verify.",
   },
   {
-    q: "Where do the citations come from?",
-    a: "Only from pages and documents an agent actually opened during that run. If the Validator can't ground a sentence in a retrieved source, it gets flagged rather than quietly included.",
+    q: "Can I trust the sources?",
+    a: "They are real pages and documents that were actually opened while answering your question, not titles invented to look convincing. Every one is a link you can click and check.",
   },
   {
-    q: "Can I choose which model runs?",
-    a: "Yes. Pick one explicitly from the composer, or let the Gateway route each step to the cheapest model that can handle it — usually a fast model for retrieval and a stronger one for synthesis.",
+    q: "What can I upload?",
+    a: "PDFs, reports, papers, and contracts, including long ones. Ask about them in plain language and the answer will tell you which page it came from.",
   },
   {
-    q: "What happens to documents I upload?",
-    a: "They're indexed into your own workspace and used only to answer your questions. They aren't used to train any model, and you can delete them along with their embeddings at any time.",
+    q: "Which AI model does it use?",
+    a: "Whichever suits the question. You can pick one yourself and switch mid-conversation, or leave it to Anvay, which uses a cheaper model for simple steps and a stronger one where it matters.",
   },
   {
-    q: "Is there a free tier?",
-    a: "Early access includes a monthly allowance that covers normal research use. Open-weight models like Llama run at no usage cost, so you can stay on the free tier longer by routing to them.",
+    q: "What happens to my documents?",
+    a: "They stay in your workspace, are used only to answer your questions, are never used to train any model, and are deleted permanently whenever you say so.",
+  },
+  {
+    q: "Is it free to try?",
+    a: "Yes. Early access includes a monthly allowance that covers normal research use, and some models cost nothing to run at all.",
   },
 ];
 

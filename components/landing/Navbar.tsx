@@ -6,9 +6,9 @@ import Icon from "@/components/ui/Icon";
 import Wordmark from "@/components/ui/Wordmark";
 
 const links = [
-  { href: "#features", label: "Features" },
-  { href: "#agents", label: "Agents" },
-  { href: "#models", label: "Models" },
+  { href: "#features", label: "Product" },
+  { href: "#how", label: "How it works" },
+  { href: "#demo", label: "See it" },
   { href: "#faq", label: "FAQ" },
 ];
 

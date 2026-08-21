@@ -55,6 +55,11 @@ export default function RootLayout({
     >
       <head>
         <ThemeScript />
+        {/* Scroll-revealed content starts transparent. If scripting never
+            runs, nothing would ever reveal it, so opt out entirely. */}
+        <noscript>
+          <style>{`.reveal{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
