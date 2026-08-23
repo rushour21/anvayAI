@@ -93,29 +93,6 @@ The app currently shows a **design-complete UI with mocked data** (see `stores/c
 
 ---
 
-## What's Next (Part 1+)
-
-The [ROADMAP](./docs/ROADMAP.md) breaks down 12 parts for v1:
-
-| Part | Focus | Status |
-|------|-------|--------|
-| 0 | Design & landing page | ✅ Done |
-| 1 | Postgres + Drizzle migrations | 🔄 Started |
-| 2 | Google OAuth + session management | ⏳ Queued |
-| 3 | Chat & message storage | ⏳ Queued |
-| 4 | Streaming engine with resumable runs | ⏳ Queued |
-| 5 | Multi-model gateway (OpenRouter) | ⏳ Queued |
-| 6 | Context assembly & prompt caching | ⏳ Queued |
-| 7 | Web search integration | ⏳ Queued |
-| 8 | Citation grounding (fact-checking) | ⏳ Queued |
-| 9 | Document upload & RAG | ⏳ Queued |
-| 10 | Cross-chat memory | ⏳ Queued |
-| 11 | Cost tracking & rate limits | ⏳ Queued |
-| 12 | Production hardening | ⏳ Queued |
-
-**Parts 1–4 are the spine.** Everything after is additive.
-
----
 
 ## Key Decisions (Locked)
 
