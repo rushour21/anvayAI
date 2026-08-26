@@ -1,24 +1,38 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import AnvayMark from "@/components/ui/AnvayMark";
+import Icon from "@/components/ui/Icon";
 import SidebarLogo from "@/components/sidebar/SidebarLogo";
+import SidebarToggle from "@/components/sidebar/SidebarToggle";
 import NewChatButton from "@/components/sidebar/NewChatButton";
 import ChatHistoryList from "@/components/sidebar/ChatHistoryList";
 import UserChip from "@/components/sidebar/UserChip";
+import { useChatStore } from "@/stores/chatStore";
+import { useUIStore } from "@/stores/uiStore";
 
 export default function Sidebar() {
+  const collapsed = useUIStore((s) => s.sidebarCollapsed);
+
+  if (collapsed) return <CollapsedRail />;
+
   return (
     <aside
-      className="hidden lg:flex flex-col h-full overflow-hidden"
+      className="hidden lg:flex flex-col h-full overflow-hidden shrink-0"
       style={{
-        width: 268,
+        width: 240,
         background: "var(--paper-alt)",
         borderRight: "1px solid var(--line)",
-        padding: "18px 12px",
+        padding: "14px 10px",
+        transition: "width 0.18s var(--ease-out)",
       }}
     >
-      <SidebarLogo />
+      <div className="flex items-center justify-between px-1">
+        <SidebarLogo />
+        <SidebarToggle />
+      </div>
 
-      <div className="mt-5">
+      <div className="mt-4">
         <NewChatButton />
       </div>
 
@@ -28,6 +42,65 @@ export default function Sidebar() {
 
       <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
         <UserChip />
+      </div>
+    </aside>
+  );
+}
+
+/* A slim icon-only rail — collapsed state keeps navigation reachable
+   without spending 240px on it. */
+function CollapsedRail() {
+  const router = useRouter();
+  const clearMessages = useChatStore((s) => s.clearMessages);
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+
+  return (
+    <aside
+      className="hidden lg:flex flex-col items-center h-full overflow-hidden shrink-0"
+      style={{
+        width: 56,
+        background: "var(--paper-alt)",
+        borderRight: "1px solid var(--line)",
+        padding: "14px 8px",
+        transition: "width 0.18s var(--ease-out)",
+      }}
+    >
+      <button
+        onClick={toggleSidebar}
+        aria-label="Expand sidebar"
+        title="Expand sidebar"
+        className="flex items-center justify-center rounded-lg cursor-pointer"
+        style={{ width: 32, height: 32 }}
+      >
+        <AnvayMark size={22} tone="brand" />
+      </button>
+
+      <button
+        onClick={() => {
+          clearMessages();
+          setActiveChatId(null);
+          router.push("/chat/new");
+        }}
+        aria-label="New chat"
+        title="New chat"
+        className="btn btn-primary mt-4 flex items-center justify-center cursor-pointer"
+        style={{ width: 34, height: 34, padding: 0, borderRadius: 10 }}
+      >
+        <Icon name="plus" size={16} strokeWidth={2.2} />
+      </button>
+
+      <div className="mt-auto">
+        <span
+          className="shrink-0 rounded-full flex items-center justify-center text-white text-[11px] font-semibold"
+          style={{
+            width: 30,
+            height: 30,
+            background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
+          }}
+        >
+          RI
+        </span>
       </div>
     </aside>
   );

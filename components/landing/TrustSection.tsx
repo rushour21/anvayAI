@@ -8,16 +8,16 @@ import GradientPanel, { SymbolLeaves } from "./GradientPanel";
 
 const points = [
   {
-    title: "Every answer shows its work",
-    body: "Sources sit under each answer, linked to the original. Nothing asks you to take it on faith.",
+    title: "Every claim links to the source",
+    body: "Not a paraphrase — every claim traces back to the specific 10-K, 10-Q, or transcript section it came from.",
   },
   {
-    title: "It tells you when it isn't sure",
-    body: "Anything Anvay can't back up with a real source gets flagged rather than slipped in alongside the rest.",
+    title: "It won't guess at a number",
+    body: "If a filing doesn't support a claim, Anvay says so instead of inventing a number that sounds plausible.",
   },
   {
-    title: "Your files stay yours",
-    body: "Documents live in your workspace, are never used to train a model, and go when you delete them.",
+    title: "Your research stays private",
+    body: "Your uploads and chats are private to your account, never used to train a model, and gone when you delete them.",
   },
 ];
 
@@ -28,8 +28,8 @@ export default function TrustSection() {
         <Reveal>
         <div className="section-head">
           <h2 className="display-lg">
-            Answers you can{" "}
-            <span className="serif-accent serif-accent-blue">check yourself.</span>
+            Built on{" "}
+            <span className="serif-accent serif-accent-blue">trust.</span>
           </h2>
         </div>
         </Reveal>
@@ -43,8 +43,8 @@ export default function TrustSection() {
             <GradientPanel tone="indigo" symbol={SymbolLeaves} height="100%" className="min-h-[280px]" />
 
             <div className="px-3 py-6 lg:pr-10 flex flex-col gap-8">
-              {points.map((p) => (
-                <div key={p.title} className="flex gap-3.5">
+              {points.map((p, i) => (
+                <div key={p.title} className="flex gap-3.5 animate-slide-left" style={{ animationDelay: `${i * 100}ms` }}>
                   <span className="shrink-0 mt-0.5" style={{ color: "var(--blue-500)" }}>
                     <Icon name="sparkle" size={17} />
                   </span>

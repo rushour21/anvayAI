@@ -5,9 +5,10 @@ import { AGENT_MAP } from "@/constants/agents";
 import type { AgentRole } from "@/types/agent";
 import InputToolButton from "./InputToolButton";
 
-/* The composer toggles the same agents the empty state does, so the two
-   surfaces can never disagree about what will run. */
-const TOOLS: AgentRole[] = ["search", "rag", "code", "memory"];
+/* The composer toggles the same two things the empty state does, so the two
+   surfaces can never disagree about what will run. Everything else (memory,
+   calculations, source-checking) always runs in the background. */
+const TOOLS: AgentRole[] = ["search", "rag"];
 
 export default function InputToolbar() {
   const activeAgents = useChatStore((s) => s.activeAgents);

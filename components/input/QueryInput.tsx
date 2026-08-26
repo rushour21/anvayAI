@@ -37,7 +37,7 @@ export default function QueryInput() {
           resize();
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Ask anything — agents will collaborate on it"
+        placeholder="Ask about a company, a filing, or your own documents"
         rows={1}
         aria-label="Message"
         className="flex-1 resize-none bg-transparent outline-none text-[14.5px]"

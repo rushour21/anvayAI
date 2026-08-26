@@ -6,27 +6,27 @@ import Icon from "@/components/ui/Icon";
 const faqs = [
   {
     q: "How is this different from a normal AI chatbot?",
-    a: "A chatbot answers from memory and sounds equally confident whether it is right or wrong. Anvay looks things up first, shows you where each part of the answer came from, and flags anything it could not verify.",
+    a: "A chatbot guesses at financial figures from training data, which are often outdated or wrong. Anvay reads the actual SEC filing and cites the exact section.",
   },
   {
-    q: "Can I trust the sources?",
-    a: "They are real pages and documents that were actually opened while answering your question, not titles invented to look convincing. Every one is a link you can click and check.",
+    q: "Which companies can I research?",
+    a: "Any US public company that files with the SEC — 10-Ks, 10-Qs, and 8-Ks are pulled automatically. Non-US filings coming later.",
   },
   {
-    q: "What can I upload?",
-    a: "PDFs, reports, papers, and contracts, including long ones. Ask about them in plain language and the answer will tell you which page it came from.",
+    q: "Can I upload my own research?",
+    a: "Yes — analyst reports, models, or presentations. Anvay can compare them against the company's own filings to spot differences.",
   },
   {
-    q: "Which AI model does it use?",
-    a: "Whichever suits the question. You can pick one yourself and switch mid-conversation, or leave it to Anvay, which uses a cheaper model for simple steps and a stronger one where it matters.",
+    q: "Does this replace Bloomberg or a terminal?",
+    a: "No. Anvay is for research and investigation, not trading, real-time pricing, or portfolio management. It's a research assistant, not a terminal.",
   },
   {
-    q: "What happens to my documents?",
-    a: "They stay in your workspace, are used only to answer your questions, are never used to train any model, and are deleted permanently whenever you say so.",
+    q: "Is my research private?",
+    a: "Yes — your uploads and chats are private to your account, never used to train a model, and deleted permanently when you choose.",
   },
   {
     q: "Is it free to try?",
-    a: "Yes. Early access includes a monthly allowance that covers normal research use, and some models cost nothing to run at all.",
+    a: "Yes. Early access includes a monthly allowance that covers normal research use.",
   },
 ];
 

@@ -7,22 +7,22 @@ const SUGGESTIONS: { label: string; icon: IconName; prompt: string }[] = [
   {
     label: "Research",
     icon: "globe",
-    prompt: "What changed in long-context retrieval methods this year?",
+    prompt: "What's driving NVIDIA's revenue growth this year?",
   },
   {
     label: "Compare",
     icon: "layers",
-    prompt: "Postgres vs. ClickHouse for event analytics at 10B rows",
+    prompt: "Compare NVIDIA and AMD on margins and R&D spend",
   },
   {
-    label: "Explain",
-    icon: "brain",
-    prompt: "Explain how speculative decoding actually speeds up inference",
+    label: "Investigate",
+    icon: "search",
+    prompt: "Why did Apple's operating margin decline last quarter?",
   },
   {
-    label: "Build",
-    icon: "code",
-    prompt: "Design a rate limiter that survives a multi-region failover",
+    label: "Filing",
+    icon: "document",
+    prompt: "What are the biggest risks in Microsoft's latest 10-K?",
   },
 ];
 

@@ -16,36 +16,36 @@ const audiences: {
   bullets: string[];
 }[] = [
   {
-    id: "students",
-    tab: "Students",
-    icon: "book",
-    headline: "Understand it, don't just find it",
-    body: "Upload the lecture notes and the textbook chapter, then ask until it actually makes sense. Every explanation points back at the page it came from, so revision is checkable.",
-    bullets: ["Ask your own course material", "Answers cite the page", "Follow-ups keep the thread"],
+    id: "equity",
+    tab: "Equity research",
+    icon: "target",
+    headline: "Cover more companies, write faster",
+    body: "Ask why a metric moved and get the MD&A section that explains it, not a guess. Turn the finding straight into an earnings note or flash report.",
+    bullets: ["Cites the exact filing section", "Generates earnings notes", "Track your research history"],
   },
   {
-    id: "researchers",
-    tab: "Researchers",
-    icon: "search",
-    headline: "A literature scan in minutes",
-    body: "Sweep the open web and the papers you already have, and get one synthesis instead of forty tabs. Anything that can't be traced to a source is flagged rather than asserted.",
-    bullets: ["Cross-checks between sources", "Flags what it can't ground", "Keeps the citation trail"],
-  },
-  {
-    id: "analysts",
-    tab: "Analysts",
+    id: "investment",
+    tab: "Investment/portfolio",
     icon: "layers",
-    headline: "Get to the number faster",
-    body: "Drop in the report and ask what changed. Anvay pulls the figure, tells you which page it sat on, and shows what it compared it against.",
-    bullets: ["Long reports, straight answers", "Points at the exact page", "Switch models for hard maths"],
+    headline: "Monitor holdings without the manual scan",
+    body: "Ask what changed since your last look at a company. Anvay remembers what you've already investigated and flags what's new.",
+    bullets: ["Remembers your research", "Flash reports on breaking news", "Cross-checks filings vs. calls"],
   },
   {
-    id: "teams",
-    tab: "Teams",
-    icon: "users",
-    headline: "Answers from what your team wrote down",
-    body: "Point Anvay at your shared docs so people stop asking the same question twice — and so the answer comes from your own material, not the open internet.",
-    bullets: ["Shared workspace", "Private to your team", "Never used for training"],
+    id: "pevc",
+    tab: "PE/VC research",
+    icon: "search",
+    headline: "Public comps, without the busywork",
+    body: "Build a comparison table across competitors in one prompt instead of rebuilding the same spreadsheet for every deal.",
+    bullets: ["Side-by-side metrics", "Export to Excel", "Market context for due diligence"],
+  },
+  {
+    id: "individual",
+    tab: "Individual investors",
+    icon: "sparkle",
+    headline: "Do the homework before you buy",
+    body: "Ask why a stock moved, not just that it did. Every claim traces back to a real filing you can check yourself.",
+    bullets: ["No Bloomberg terminal needed", "Cited, not guessed", "Research at your own pace"],
   },
 ];
 
@@ -59,8 +59,8 @@ export default function Audience() {
         <Reveal>
           <div className="section-head">
             <h2 className="display-lg">
-              Built for whoever needs to{" "}
-              <span className="serif-accent serif-accent-blue">be sure.</span>
+              Built for financial{" "}
+              <span className="serif-accent serif-accent-blue">professionals.</span>
             </h2>
           </div>
         </Reveal>
@@ -82,11 +82,12 @@ export default function Audience() {
                     role="tab"
                     aria-selected={on}
                     onClick={() => setActive(i)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13.5px] font-medium cursor-pointer transition-all duration-200"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13.5px] font-medium cursor-pointer transition-all duration-200 animate-fade-up"
                     style={{
                       background: on ? "var(--blue-500)" : "transparent",
                       color: on ? "#fff" : "var(--ink-500)",
                       boxShadow: on ? "var(--shadow-blue)" : "none",
+                      animationDelay: `${i * 50}ms`,
                     }}
                   >
                     <Icon name={x.icon} size={14} />

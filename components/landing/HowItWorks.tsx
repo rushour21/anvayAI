@@ -9,20 +9,20 @@ import Reveal, { useInView } from "@/components/ui/Reveal";
 const steps: { n: string; title: string; body: string; icon: IconName }[] = [
   {
     n: "01",
-    title: "Ask in plain language",
-    body: "Type the question the way you'd say it out loud. Attach a document if the answer lives in one.",
+    title: "Ask what changed",
+    body: "'Why did operating margin fall?' Type it the way you'd ask a colleague. Pick a company or upload a report.",
     icon: "message",
   },
   {
     n: "02",
-    title: "It goes and reads",
-    body: "Anvay searches, opens what looks promising, and throws away the filler — while you watch it happen.",
+    title: "It investigates, not just searches",
+    body: "Anvay finds the metric, locates the filing section, pulls management's explanation — while you watch each step.",
     icon: "search",
   },
   {
     n: "03",
-    title: "You get an answer worth keeping",
-    body: "Written plainly, with every source attached, and anything uncertain marked rather than buried.",
+    title: "Get a cited answer",
+    body: "Every explanation traces back to the exact filing and section. Turn it into an earnings note in one click.",
     icon: "check",
   },
 ];
@@ -38,8 +38,8 @@ export default function HowItWorks() {
         <Reveal>
           <div className="section-head">
             <h2 className="display-lg">
-              Three steps, and{" "}
-              <span className="serif-accent serif-accent-blue">you&apos;re done.</span>
+              From question to{" "}
+              <span className="serif-accent serif-accent-blue">cited answer.</span>
             </h2>
           </div>
         </Reveal>

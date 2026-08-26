@@ -15,7 +15,7 @@ export default function SuggestionCard({ label, icon, prompt }: SuggestionCardPr
   return (
     <button
       onClick={() => sendMessage(prompt)}
-      className="group text-left p-4 rounded-2xl transition-all duration-200 cursor-pointer"
+      className="group text-left p-3.5 rounded-2xl transition-all duration-200 cursor-pointer"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--line)",
@@ -41,7 +41,7 @@ export default function SuggestionCard({ label, icon, prompt }: SuggestionCardPr
         </span>
       </span>
       <span
-        className="block text-[13.5px] leading-snug"
+        className="block text-[13px] leading-snug"
         style={{ color: "var(--ink-700)" }}
       >
         {prompt}

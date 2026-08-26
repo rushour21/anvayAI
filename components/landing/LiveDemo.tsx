@@ -11,21 +11,21 @@ import Reveal, { useInView } from "@/components/ui/Reveal";
    The loop only advances while the section is on screen; a demo animating
    in a background tab is wasted battery. */
 
-const QUERY = "Is intermittent fasting actually better than calorie counting?";
+const QUERY = "Why did NVIDIA's operating margin decline last quarter?";
 
 const ANSWER =
-  "Across the head-to-head trials, the two produce about the same weight loss once total calories match. Fasting wins on adherence for some people and loses it for others.";
+  "Operating margin fell to 62.5% from 68.1% YoY, driven mainly by a one-time inventory charge flagged in the MD&A section — partly offset by continued Data Center revenue growth.";
 
 const STEPS = [
-  { label: "Searching", icon: "globe" as const },
-  { label: "Reading 9 sources", icon: "document" as const },
-  { label: "Cross-checking", icon: "shield" as const },
+  { label: "Reading the 10-K", icon: "document" as const },
+  { label: "Checking the MD&A", icon: "search" as const },
+  { label: "Citing the evidence", icon: "shield" as const },
 ];
 
 const SOURCES = [
-  { domain: "nih.gov", tint: "#3B6EF5" },
-  { domain: "nature.com", tint: "#0E9AA7" },
-  { domain: "bmj.com", tint: "#8B5CF0" },
+  { domain: "10-K, Item 7", tint: "#3B6EF5" },
+  { domain: "Q3 earnings call", tint: "#0E9AA7" },
+  { domain: "8-K filing", tint: "#8B5CF0" },
 ];
 
 type Phase = "typing" | "working" | "sources" | "answering" | "hold";
@@ -119,11 +119,11 @@ export default function LiveDemo() {
         <Reveal>
           <div className="section-head">
             <h2 className="display-lg">
-              Watch one question{" "}
-              <span className="serif-accent serif-accent-blue">get answered.</span>
+              Watch an investigation{" "}
+              <span className="serif-accent serif-accent-blue">happen.</span>
             </h2>
             <p className="lede mt-4">
-              No tabs, no skimming, no wondering where the number came from.
+              No tabs, no guessing, no unlabeled numbers.
             </p>
           </div>
         </Reveal>
