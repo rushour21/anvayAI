@@ -11,7 +11,7 @@ export const THEME_KEY = "anvay-theme";
 export default function ThemeScript() {
   const js = `(function(){try{
 var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});
-if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}
+if(t!=="light"&&t!=="dark"){t="light";}
 document.documentElement.setAttribute("data-theme",t);
 }catch(e){document.documentElement.setAttribute("data-theme","light");}})();`;
 
