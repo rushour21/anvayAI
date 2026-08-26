@@ -13,10 +13,8 @@ export default function HelpPage() {
 
       <Link
         href="/#faq"
-        className="mt-6 flex items-center gap-3 px-4 py-3.5 transition-colors duration-150"
-        style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 16 }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--blue-200)")}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--line)")}
+        className="card-hover surface-card mt-6 flex items-center gap-3 px-4 py-3.5"
+        style={{ borderRadius: 16 }}
       >
         <span
           className="flex items-center justify-center rounded-xl shrink-0"
