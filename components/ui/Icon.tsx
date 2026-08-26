@@ -44,7 +44,9 @@ export type IconName =
   | "close"
   | "star"
   | "zap"
-  | "dots";
+  | "dots"
+  | "logout"
+  | "bell";
 
 const paths: Record<IconName, React.ReactNode> = {
   sparkle: (
@@ -229,6 +231,19 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="5" cy="12" r="1.2" />
       <circle cx="12" cy="12" r="1.2" />
       <circle cx="19" cy="12" r="1.2" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3" />
+      <path d="M20 12H10" />
+      <path d="M16 8l4 4-4 4" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M6 10a6 6 0 0 1 12 0v4l2 3H4l2-3z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
     </>
   ),
 };

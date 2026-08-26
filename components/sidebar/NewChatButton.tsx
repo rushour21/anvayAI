@@ -16,9 +16,9 @@ export default function NewChatButton() {
         setActiveChatId(null);
         router.push("/chat/new");
       }}
-      className="btn btn-primary w-full py-2.5 text-[14px]"
+      className="btn btn-primary w-full py-2 text-[13px]"
     >
-      <Icon name="plus" size={16} strokeWidth={2.2} />
+      <Icon name="plus" size={14} strokeWidth={2.2} />
       New chat
     </button>
   );

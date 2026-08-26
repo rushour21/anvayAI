@@ -12,7 +12,7 @@ export default function AgentPills() {
     <div
       className="flex flex-wrap gap-2 justify-center"
       role="group"
-      aria-label="Agents to run"
+      aria-label="What to check"
     >
       {EMPTY_STATE_AGENTS.map((role) => {
         const info = AGENT_MAP[role];

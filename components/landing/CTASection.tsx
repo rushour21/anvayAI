@@ -31,22 +31,22 @@ export default function CTASection() {
 
           <div className="relative z-10">
             <h2 className="display-md" style={{ maxWidth: "20ch", margin: "0 auto" }}>
-              Work smarter and faster{" "}
-              <span className="serif-accent serif-accent-blue">with Anvay.</span>
+              Start researching{" "}
+              <span className="serif-accent serif-accent-blue">smarter.</span>
             </h2>
             <p className="lede mt-4 mx-auto" style={{ maxWidth: "48ch" }}>
-              Join the early access list. We&apos;re onboarding researchers, students,
-              and teams in small batches.
+              Early access for equity, investment, and individual research. We&apos;re
+              onboarding analysts in small batches.
             </p>
 
             <form onSubmit={submit} className="mt-8 mx-auto" style={{ maxWidth: 460 }}>
               <div
-                className="flex items-center gap-2 pl-5 pr-1.5 py-1.5"
+                className="flex items-center gap-2 pl-5 pr-1.5 py-1.5 transition-all duration-300"
                 style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
+                  background: done ? "rgba(16, 163, 127, 0.08)" : "var(--surface)",
+                  border: `1px solid ${done ? "rgba(16, 163, 127, 0.3)" : "var(--line)"}`,
                   borderRadius: 999,
-                  boxShadow: "var(--shadow-soft)",
+                  boxShadow: done ? "0 0 0 3px rgba(16, 163, 127, 0.1)" : "var(--shadow-soft)",
                 }}
               >
                 <input

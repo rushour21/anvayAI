@@ -106,15 +106,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     addMessage(userMsg);
     setIsStreaming(true);
 
-    // Build dynamic trace based on active agents
-    // Standards: gateway first, then selected agents, then synthesizer, then validator
-    const traceAgents: AgentRole[] = ["gateway"];
-    if (activeAgents.includes("memory")) traceAgents.push("memory");
-    if (activeAgents.includes("search")) traceAgents.push("search");
-    if (activeAgents.includes("code")) traceAgents.push("code");
-    if (activeAgents.includes("rag")) traceAgents.push("rag");
+    // Three friendly phases, not seven internal pipeline steps — memory,
+    // gateway, and calculations run silently and never surface here.
+    // "Researching" only shows if the user left web/filings or their own
+    // documents switched on; analyzing and source-checking always run.
+    const traceAgents: AgentRole[] = [];
+    if (activeAgents.includes("search") || activeAgents.includes("rag")) {
+      traceAgents.push("search");
+    }
     traceAgents.push("synthesizer");
-    if (activeAgents.includes("validator")) traceAgents.push("validator");
+    traceAgents.push("validator");
 
     const trace: TraceStep[] = traceAgents.map((role) => ({
       agent: role,
@@ -146,15 +147,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
         id: crypto.randomUUID(),
         role: "assistant",
         content: [
-          `Here is what the agents found on "${content}".`,
+          `Here's what I found on "${content}".`,
           "",
-          `${traceAgents.length} modules ran on this question. Their findings agree on three points:`,
+          "The key points, checked against the sources below:",
           "",
-          "1. The core mechanism is well established, and the recent work refines it rather than replacing it.",
-          "2. Measured gains hold up across the benchmarks that were checked, though the margins narrow at scale.",
-          "3. The practical recommendation depends on your latency budget more than on raw accuracy.",
+          "1. The core mechanism is well established, and recent developments refine it rather than replace it.",
+          "2. The results hold up across the sources that were checked, though the margins narrow in edge cases.",
+          "3. The right call here depends on your specific constraints more than on the headline number.",
           "",
-          "The Validator cross-checked each claim against the sources below. Anything it could not ground was dropped rather than included.",
+          "Anything I couldn't confirm from a real source was left out rather than guessed at.",
           "",
           "Want me to go deeper on any one of these?",
         ].join("\n"),

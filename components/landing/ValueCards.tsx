@@ -22,35 +22,34 @@ const cards: Card[] = [
   {
     tone: "indigo",
     symbol: SymbolOrbit,
-    title: "Finish the research in one go",
-    body: "Ask once and get a written answer with its sources attached — instead of ten tabs you still have to read and reconcile yourself.",
+    title: "Investigate, don't just retrieve",
+    body: "Ask why a number moved and get the actual cause, cited to the filing section — not a plausible-sounding guess.",
     rows: [
-      { label: "Reads the live web", meta: "Up to date" },
-      { label: "Shows every source", meta: "One click away" },
-      { label: "Remembers the thread", meta: "Ask follow-ups" },
+      { label: "Finds the filing section", meta: "MD&A or notes" },
+      { label: "Cites management's explanation", meta: "Real quote" },
+      { label: "Flags what it can't verify", meta: "Honest gaps" },
     ],
   },
   {
     tone: "azure",
     symbol: SymbolLeaves,
-    title: "Ask your own documents",
-    body: "Drop in a report, contract, or paper and ask about it in plain language. Answers point back to the page they came from.",
+    title: "Compare companies properly",
+    body: "Ask to compare two or five companies and get a real side-by-side metric table — revenue, margins, FCF, R&D, debt.",
     rows: [
-      { label: "PDFs and reports", meta: "Any length" },
-      { label: "Answers cite the page", meta: "Check it yourself" },
-      { label: "Stays in your workspace", meta: "Private" },
+      { label: "Auto-fetched from SEC filings", meta: "Live data" },
+      { label: "Export to Excel", meta: "For your model" },
+      { label: "Explains key differences", meta: "Context included" },
     ],
   },
   {
     tone: "teal",
     symbol: SymbolPrism,
-    title: "Use the model that suits the job",
-    body: "Switch between the best models mid-conversation without losing your place — or let Anvay pick and keep the cost down for you.",
+    title: "Combine your research with the filing",
+    body: "Upload an analyst report and ask how it stacks up against the company's own 10-K.",
     rows: [
-      { label: "GPT-4o", meta: "Everyday" },
-      { label: "Gemini 2.5 Flash", meta: "Long documents" },
-      { label: "DeepSeek V3", meta: "Maths & code" },
-      { label: "Llama 4 Scout", meta: "Free" },
+      { label: "PDFs and Excel files", meta: "Any length" },
+      { label: "Cited by page", meta: "Check it yourself" },
+      { label: "Stays private", meta: "Your workspace only" },
     ],
   },
 ];
@@ -62,8 +61,8 @@ export default function ValueCards() {
         <Reveal>
         <div className="section-head">
           <h2 className="display-lg">
-            Everything you need to{" "}
-            <span className="serif-accent serif-accent-blue">know for certain.</span>
+            What makes Anvay{" "}
+            <span className="serif-accent serif-accent-blue">different.</span>
           </h2>
         </div>
         </Reveal>
@@ -74,7 +73,7 @@ export default function ValueCards() {
               key={c.title}
               delay={i * 0.1}
               as="article"
-              className="surface-card card-hover p-3 flex flex-col"
+              className="surface-card card-hover card-lift p-3 flex flex-col"
               style={{ borderRadius: 22 }}
             >
               <GradientPanel tone={c.tone} symbol={c.symbol} />

@@ -1,5 +1,6 @@
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
+import RightPanel from "@/components/layout/RightPanel";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      <RightPanel />
     </div>
   );
 }

@@ -37,9 +37,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Anvay AI — Multi-Agent Search",
+  title: "Anvay — Financial Research Copilot",
   description:
-    "Anvay AI is a multi-agent AI search engine where agents collaborate to deliver comprehensive, verified answers.",
+    "Anvay reads SEC filings, earnings transcripts, and your own research to answer financial questions with the exact source it came from.",
 };
 
 export default function RootLayout({

@@ -3,6 +3,7 @@ import Hero from "@/components/landing/Hero";
 import ValueCards from "@/components/landing/ValueCards";
 import HowItWorks from "@/components/landing/HowItWorks";
 import LiveDemo from "@/components/landing/LiveDemo";
+import Deliverables from "@/components/landing/Deliverables";
 import Comparison from "@/components/landing/Comparison";
 import TrustSection from "@/components/landing/TrustSection";
 import Audience from "@/components/landing/Audience";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <ValueCards />
       <HowItWorks />
       <LiveDemo />
+      <Deliverables />
       <Comparison />
       <TrustSection />
       <Audience />

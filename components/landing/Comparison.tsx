@@ -7,29 +7,29 @@ import Reveal from "@/components/ui/Reveal";
 
 const rows = [
   {
-    label: "Where the answer comes from",
-    chatbot: "Whatever the model remembers",
-    anvay: "Pages it opened just now",
+    label: "Why a metric changed",
+    chatbot: "Guesses from training data",
+    anvay: "Reads the actual MD&A section",
   },
   {
-    label: "Checking it yourself",
-    chatbot: "You go and search anyway",
-    anvay: "Every claim links to its source",
+    label: "Comparing companies",
+    chatbot: "You build the spreadsheet",
+    anvay: "Auto-generated comparison table",
   },
   {
-    label: "When it doesn't know",
-    chatbot: "Sounds just as confident",
-    anvay: "Says so, and marks the gap",
+    label: "Citing a number",
+    chatbot: "Might be outdated or invented",
+    anvay: "Traced to the exact filing",
   },
   {
-    label: "Your own documents",
+    label: "Your own research",
     chatbot: "Paste and hope it fits",
-    anvay: "Upload once, cited by page",
+    anvay: "Compared against the company's filing",
   },
   {
-    label: "Choosing a model",
-    chatbot: "One, take it or leave it",
-    anvay: "Switch any time, mid-answer",
+    label: "The deliverable",
+    chatbot: "A paragraph you format yourself",
+    anvay: "An earnings note, ready to export",
   },
 ];
 
@@ -40,8 +40,8 @@ export default function Comparison() {
         <Reveal>
           <div className="section-head">
             <h2 className="display-lg">
-              The difference you feel{" "}
-              <span className="serif-accent serif-accent-blue">by the second answer.</span>
+              Anvay vs. a{" "}
+              <span className="serif-accent serif-accent-blue">regular chatbot.</span>
             </h2>
           </div>
         </Reveal>
@@ -96,8 +96,8 @@ export default function Comparison() {
                     name="check"
                     size={13}
                     strokeWidth={2.6}
-                    className="shrink-0 mt-1"
-                    style={{ color: "var(--blue-500)" }}
+                    className="shrink-0 mt-1 animate-pulse-soft"
+                    style={{ color: "var(--blue-500)", animationDuration: "2s" }}
                   />
                   {r.anvay}
                 </span>

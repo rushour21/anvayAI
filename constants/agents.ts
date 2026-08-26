@@ -32,25 +32,25 @@ export const AGENT_MAP: Record<AgentRole, AgentInfo> = {
   },
   search: {
     role: "search",
-    label: "Web Search",
+    label: "Web & filings",
     icon: "globe",
     color: "var(--agent-search)",
-    description: "Searches the web for real-time information",
+    description: "Searches the web and public filings for real-time information",
     blurb:
-      "Queries the live web, opens the promising results, and discards the filler.",
+      "Queries the live web and SEC filings, opens the promising results, and discards the filler.",
   },
   code: {
     role: "code",
-    label: "Code Runner",
+    label: "Calculations",
     icon: "code",
     color: "var(--agent-code)",
-    description: "Executes and analyzes code snippets",
+    description: "Runs the numbers behind an answer",
     blurb:
-      "Runs snippets in a sandbox so numbers and outputs are computed, not guessed.",
+      "Runs the math in a sandbox so figures and ratios are computed, not guessed.",
   },
   rag: {
     role: "rag",
-    label: "Documents",
+    label: "Your documents",
     icon: "document",
     color: "var(--agent-rag)",
     description: "Retrieves from uploaded documents",
@@ -59,16 +59,16 @@ export const AGENT_MAP: Record<AgentRole, AgentInfo> = {
   },
   synthesizer: {
     role: "synthesizer",
-    label: "Synthesizer",
+    label: "Analyzing",
     icon: "layers",
     color: "var(--agent-synthesizer)",
-    description: "Combines findings into coherent answers",
+    description: "Combines findings into a coherent answer",
     blurb:
-      "Merges every agent's findings into one answer, resolving conflicts explicitly.",
+      "Merges every finding into one answer, resolving conflicts explicitly.",
   },
   validator: {
     role: "validator",
-    label: "Validator",
+    label: "Checking sources",
     icon: "shield",
     color: "var(--agent-validator)",
     description: "Fact-checks and validates responses",
@@ -81,15 +81,11 @@ export const AGENT_COLORS: Record<AgentRole, string> = Object.fromEntries(
   Object.entries(AGENT_MAP).map(([k, v]) => [k, v.color])
 ) as Record<AgentRole, string>;
 
-/** Agents the user can toggle from the composer. */
-export const EMPTY_STATE_AGENTS: AgentRole[] = [
-  "search",
-  "memory",
-  "code",
-  "rag",
-  "synthesizer",
-  "validator",
-];
+/** What the user can toggle from the composer. Everything else (memory,
+    calculations, source-checking) always runs in the background — a
+    non-technical user shouldn't have to understand or choose between
+    seven internal pipeline steps. */
+export const EMPTY_STATE_AGENTS: AgentRole[] = ["search", "rag"];
 
 /** Canonical execution order — gateway always first, validator always last. */
 export const PIPELINE_ORDER: AgentRole[] = [

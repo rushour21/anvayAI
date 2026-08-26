@@ -5,9 +5,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 
-/* Honest substitute for the usual fake client-logo row: the model
-   providers Anvay actually routes to. */
-const PROVIDERS = ["Anthropic", "OpenAI", "Google DeepMind", "Meta AI", "Mistral", "Cohere"];
+/* Filing types users care about — proof of relevance to the audience. */
+const FILING_TYPES = ["10-K", "10-Q", "8-K", "Earnings calls", "Investor decks"];
 
 export default function Hero() {
   const router = useRouter();
@@ -102,7 +101,7 @@ export default function Hero() {
           <div className="animate-fade-up">
             <span className="pill-badge">
               <Icon name="sparkle" size={13} />
-              Multi-agent intelligence
+              The financial research copilot
             </span>
           </div>
 
@@ -110,20 +109,19 @@ export default function Hero() {
             className="display-xl mt-7 animate-fade-up delay-1"
             style={{ color: "var(--ink-900)", maxWidth: 940 }}
           >
-            Search. Verify.{" "}
-            <span className="serif-accent">Understand.</span>
+            Understand{" "}
+            <span className="serif-accent">markets.</span>
             <br />
-            All in One{" "}
-            <span className="serif-accent serif-accent-blue">AI Workspace.</span>
+            Move{" "}
+            <span className="serif-accent serif-accent-blue">faster.</span>
           </h1>
 
           <p
             className="lede mt-6 animate-fade-up delay-2"
             style={{ maxWidth: "58ch", color: "var(--ink-600)" }}
           >
-            Anvay runs a team of specialised agents on every question — they search,
-            read, cross-check, and synthesise, so you get a cited answer instead of ten
-            blue links.
+            Research, analyze, and investigate — every answer grounded in filings and
+            transcripts, so nothing is ever taken from memory.
           </p>
 
           <div className="mt-8 animate-fade-up delay-3">
@@ -140,33 +138,31 @@ export default function Hero() {
             style={{ maxWidth: 620 }}
           >
             <div
-              className="flex items-center gap-3 pl-4 pr-2 py-2"
+              className="hero-search-bar flex items-center gap-3 pl-4 pr-2 py-2"
               style={{
                 background: "rgba(255,255,255,0.9)",
                 backdropFilter: "blur(18px)",
                 WebkitBackdropFilter: "blur(18px)",
-                border: "1px solid rgba(255,255,255,0.9)",
                 borderRadius: 999,
-                boxShadow: "var(--shadow-medium)",
               }}
             >
-              {/* Prism mark — the one place colour beyond blue is allowed,
-                  signalling "many models behind one box". */}
+              {/* Prism mark — subtle continuous rotation */}
               <span
-                className="shrink-0 rounded-full"
+                className="shrink-0 rounded-full animate-spin"
                 style={{
                   width: 20,
                   height: 20,
                   background:
                     "conic-gradient(from 210deg, #3B6EF5, #8B5CF0, #0E9AA7, #3B6EF5)",
                   filter: "blur(0.2px)",
+                  animationDuration: "8s",
                 }}
               />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask anything — agents will collaborate on it"
-                aria-label="Ask a question"
+                placeholder="Why did NVIDIA's operating margin decline?"
+                aria-label="Ask a financial question"
                 className="flex-1 bg-transparent outline-none text-[15px] min-w-0"
                 style={{ color: "var(--ink-900)" }}
               />
@@ -181,36 +177,32 @@ export default function Hero() {
             </div>
           </form>
 
-          {/* ── Provider marquee ────────────────────────────── */}
+          {/* ── Data sources ────────────────────────────── */}
           <div className="w-full mt-16 animate-fade-in delay-5">
             <p
               className="text-[13px] mb-6"
               style={{ color: "var(--ink-600)", opacity: 0.75 }}
             >
-              One workspace, every frontier model
+              Grounded in public financial data
             </p>
-            <div className="relative overflow-hidden mask-fade-x">
-              <div className="flex animate-marquee w-max">
-                {[0, 1].map((dup) => (
-                  <div key={dup} className="flex shrink-0" aria-hidden={dup === 1}>
-                    {PROVIDERS.map((name) => (
-                      <span
-                        key={`${dup}-${name}`}
-                        className="font-display px-8 sm:px-12 whitespace-nowrap"
-                        style={{
-                          fontSize: 20,
-                          fontWeight: 600,
-                          letterSpacing: "-0.02em",
-                          color: "var(--ink-700)",
-                          opacity: 0.42,
-                        }}
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              {FILING_TYPES.map((type, i) => (
+                <span
+                  key={type}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full animate-scale-in`}
+                  style={{
+                    background: "rgba(59, 110, 245, 0.08)",
+                    border: "1px solid rgba(59, 110, 245, 0.2)",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "var(--blue-600)",
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                >
+                  <Icon name="check" size={12} strokeWidth={2.6} />
+                  {type}
+                </span>
+              ))}
             </div>
           </div>
         </div>
