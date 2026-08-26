@@ -3,10 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/Icon";
 import UserMenu from "./UserMenu";
+import { useAuthStore } from "@/stores/authStore";
+import { getInitials } from "@/lib/initials";
 
 export default function UserChip() {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -23,6 +26,8 @@ export default function UserChip() {
       document.removeEventListener("keydown", onKey);
     };
   }, [isOpen]);
+
+  if (!user) return null;
 
   return (
     <div ref={ref} className="relative">
@@ -47,17 +52,17 @@ export default function UserChip() {
             background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
           }}
         >
-          RI
+          {getInitials(user.name)}
         </span>
         <span className="flex flex-col min-w-0 flex-1">
           <span
             className="truncate text-[13px] font-medium"
             style={{ color: "var(--ink-900)" }}
           >
-            Rushabh Ingle
+            {user.name}
           </span>
           <span className="text-[11px]" style={{ color: "var(--ink-400)" }}>
-            Pro plan
+            {user.plan === "pro" ? "Pro plan" : "Free plan"}
           </span>
         </span>
         <Icon name="dots" size={16} style={{ color: "var(--ink-300)" }} />

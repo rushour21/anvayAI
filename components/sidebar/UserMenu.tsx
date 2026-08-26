@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Icon, { type IconName } from "@/components/ui/Icon";
+import { useAuthStore } from "@/stores/authStore";
 
 function MenuLink({
   href,
@@ -34,6 +36,15 @@ function MenuLink({
 }
 
 export default function UserMenu({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const signOut = useAuthStore((s) => s.signOut);
+
+  const handleLogout = async () => {
+    onClose();
+    await signOut();
+    router.push("/login");
+  };
+
   return (
     <div
       role="menu"
@@ -53,10 +64,9 @@ export default function UserMenu({ onClose }: { onClose: () => void }) {
 
       <div className="my-1.5" style={{ height: 1, background: "var(--line-soft)" }} />
 
-      <Link
-        href="/login"
-        onClick={onClose}
-        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer transition-colors duration-150"
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer transition-colors duration-150 text-left"
         style={{ color: "var(--ink-700)" }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "var(--paper-sunk)";
@@ -67,7 +77,7 @@ export default function UserMenu({ onClose }: { onClose: () => void }) {
       >
         <Icon name="logout" size={15} style={{ color: "var(--ink-400)" }} />
         Log out
-      </Link>
+      </button>
     </div>
   );
 }

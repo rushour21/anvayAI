@@ -1,4 +1,9 @@
+"use client";
+
 import Icon from "@/components/ui/Icon";
+import { useAuthStore } from "@/stores/authStore";
+import { useChatStore } from "@/stores/chatStore";
+import { getInitials } from "@/lib/initials";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -13,7 +18,16 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatMonthYear(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 export default function ProfilePage() {
+  const user = useAuthStore((s) => s.user);
+  const chatCount = useChatStore((s) => s.chatHistory.length);
+
+  if (!user) return null;
+
   return (
     <div className="mx-auto px-6 py-10" style={{ maxWidth: 480 }}>
       <div className="text-center">
@@ -25,20 +39,20 @@ export default function ProfilePage() {
             background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
           }}
         >
-          RI
+          {getInitials(user.name)}
         </span>
         <h1 className="mt-4 text-[19px] font-semibold" style={{ color: "var(--ink-900)" }}>
-          Rushabh Ingle
+          {user.name}
         </h1>
         <p className="text-[13px] mt-0.5" style={{ color: "var(--ink-500)" }}>
-          rushabh.ingle2111@gmail.com
+          {user.email}
         </p>
         <span
           className="inline-flex items-center gap-1.5 mt-3 pl-2.5 pr-3 py-1 rounded-full text-[12px] font-medium"
           style={{ background: "var(--blue-50)", color: "var(--blue-700)" }}
         >
           <Icon name="star" size={11} />
-          Pro plan
+          {user.plan === "pro" ? "Pro plan" : "Free plan"}
         </span>
       </div>
 
@@ -46,11 +60,11 @@ export default function ProfilePage() {
         className="mt-8 py-4 flex items-center"
         style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 16 }}
       >
-        <Stat label="Chats" value="4" />
+        <Stat label="Chats" value={String(chatCount)} />
         <div style={{ width: 1, height: 32, background: "var(--line-soft)" }} />
         <Stat label="Documents" value="0" />
         <div style={{ width: 1, height: 32, background: "var(--line-soft)" }} />
-        <Stat label="Member since" value="Aug 2026" />
+        <Stat label="Member since" value={formatMonthYear(user.createdAt)} />
       </div>
     </div>
   );
