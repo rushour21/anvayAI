@@ -1,6 +1,5 @@
 "use client";
 
-import ModelSelector from "@/components/topbar/ModelSelector";
 import TopbarActions from "@/components/topbar/TopbarActions";
 import Wordmark from "@/components/ui/Wordmark";
 
@@ -21,8 +20,6 @@ export default function Topbar() {
           <Wordmark size={19} />
         </span>
       </div>
-
-      <ModelSelector />
 
       <div className="flex-1 flex justify-end">
         <TopbarActions />
