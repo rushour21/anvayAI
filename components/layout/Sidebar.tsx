@@ -34,8 +34,31 @@ export default function Sidebar() {
         <SidebarToggle />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-col gap-1.5">
         <NewChatButton />
+        <button
+          onClick={() => {
+            /* TODO: wire to project creation flow */
+          }}
+          className="btn w-full py-2 text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
+          style={{
+            background: "transparent",
+            border: "1px solid var(--line)",
+            color: "var(--ink-600)",
+            borderRadius: "var(--radius-md, 10px)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--hover-surface)";
+            e.currentTarget.style.borderColor = "var(--ink-300)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "var(--line)";
+          }}
+        >
+          <Icon name="folderPlus" size={14} strokeWidth={1.8} />
+          Create project
+        </button>
       </div>
 
       <div className="mt-3 flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">

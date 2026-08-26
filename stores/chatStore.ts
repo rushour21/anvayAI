@@ -34,6 +34,7 @@ interface ChatState {
   setActiveChatId: (id: string | null) => void;
   clearMessages: () => void;
   sendMessage: (content: string) => void;
+  deleteChat: (id: string) => void;
 }
 
 // Mock AI response data
@@ -92,6 +93,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setSelectedModel: (model) => set({ selectedModel: model }),
   setActiveChatId: (id) => set({ activeChatId: id }),
   clearMessages: () => set({ messages: [], traceSteps: [] }),
+
+  deleteChat: (id) =>
+    set((s) => {
+      const filtered = s.chatHistory.filter((c) => c.id !== id);
+      return {
+        chatHistory: filtered,
+        /* If the deleted chat was active, reset to empty state */
+        ...(s.activeChatId === id
+          ? { activeChatId: null, messages: [], traceSteps: [] }
+          : {}),
+      };
+    }),
 
   sendMessage: (content) => {
     const { addMessage, setIsStreaming, setTraceSteps, activeAgents } = get();

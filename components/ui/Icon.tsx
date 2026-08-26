@@ -46,7 +46,10 @@ export type IconName =
   | "zap"
   | "dots"
   | "logout"
-  | "bell";
+  | "bell"
+  | "panelLeft"
+  | "trash"
+  | "folderPlus";
 
 const paths: Record<IconName, React.ReactNode> = {
   sparkle: (
@@ -244,6 +247,28 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M6 10a6 6 0 0 1 12 0v4l2 3H4l2-3z" />
       <path d="M10 20a2 2 0 0 0 4 0" />
+    </>
+  ),
+  panelLeft: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M9 3v18" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
+      <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </>
+  ),
+  folderPlus: (
+    <>
+      <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.2 3.4A2 2 0 0 0 7.5 2.5H4a2 2 0 0 0-2 2v13.5A2 2 0 0 0 4 20z" />
+      <path d="M12 10v6" />
+      <path d="M9 13h6" />
     </>
   ),
 };
