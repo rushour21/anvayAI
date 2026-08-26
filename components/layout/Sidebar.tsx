@@ -10,6 +10,8 @@ import ChatHistoryList from "@/components/sidebar/ChatHistoryList";
 import UserChip from "@/components/sidebar/UserChip";
 import { useChatStore } from "@/stores/chatStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useAuthStore } from "@/stores/authStore";
+import { getInitials } from "@/lib/initials";
 
 export default function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
@@ -54,6 +56,7 @@ function CollapsedRail() {
   const clearMessages = useChatStore((s) => s.clearMessages);
   const setActiveChatId = useChatStore((s) => s.setActiveChatId);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <aside
@@ -90,18 +93,20 @@ function CollapsedRail() {
         <Icon name="plus" size={16} strokeWidth={2.2} />
       </button>
 
-      <div className="mt-auto">
-        <span
-          className="shrink-0 rounded-full flex items-center justify-center text-white text-[11px] font-semibold"
-          style={{
-            width: 30,
-            height: 30,
-            background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
-          }}
-        >
-          RI
-        </span>
-      </div>
+      {user && (
+        <div className="mt-auto">
+          <span
+            className="shrink-0 rounded-full flex items-center justify-center text-white text-[11px] font-semibold"
+            style={{
+              width: 30,
+              height: 30,
+              background: "linear-gradient(140deg, var(--blue-400) 0%, var(--blue-600) 100%)",
+            }}
+          >
+            {getInitials(user.name)}
+          </span>
+        </div>
+      )}
     </aside>
   );
 }

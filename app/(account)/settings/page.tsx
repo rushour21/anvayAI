@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useChatStore } from "@/stores/chatStore";
+import { useAuthStore } from "@/stores/authStore";
 import { MODELS } from "@/constants/models";
 import ModelOption from "@/components/topbar/ModelOption";
 import ThemeSegment from "@/components/settings/ThemeSegment";
@@ -85,6 +86,7 @@ function DisabledButton({ children }: { children: React.ReactNode }) {
 
 export default function SettingsPage() {
   const [active, setActive] = useState<SectionId>("account");
+  const user = useAuthStore((s) => s.user);
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
   const [productUpdates, setProductUpdates] = useState(true);
@@ -151,13 +153,13 @@ export default function SettingsPage() {
               Your basic account details.
             </p>
             <Card>
-              <Row label="Name" value="Rushabh Ingle" />
+              <Row label="Name" value={user?.name ?? ""} />
               <Divider />
-              <Row label="Email" value="rushabh.ingle2111@gmail.com" />
+              <Row label="Email" value={user?.email ?? ""} />
               <Divider />
-              <Row label="Plan" value="Pro" />
+              <Row label="Plan" value={user?.plan === "pro" ? "Pro" : "Free"} />
             </Card>
-            {/* No backend yet — account fields are read-only until auth lands. */}
+            {/* Read-only until Phase B (docs/AUTH-PLAN.md) — no edit endpoint yet. */}
           </section>
         )}
 
@@ -240,7 +242,7 @@ export default function SettingsPage() {
             </p>
             <Card>
               <SettingRow
-                title="Pro plan"
+                title={user?.plan === "pro" ? "Pro plan" : "Free plan"}
                 description="Billing isn't live yet."
                 control={<DisabledButton>Manage</DisabledButton>}
               />

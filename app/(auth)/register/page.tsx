@@ -1,9 +1,35 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Wordmark from "@/components/ui/Wordmark";
 import Icon from "@/components/ui/Icon";
-import OAuthButtons from "@/components/auth/OAuthButtons";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const signUp = useAuthStore((s) => s.signUp);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signUp({ name, email, password });
+      router.push("/chat/new");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign up failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main
       data-theme="light"
@@ -40,41 +66,27 @@ export default function RegisterPage() {
             Free while we&apos;re in early access.
           </p>
 
-          <OAuthButtons label="Sign up with Google" />
-
-          <form className="flex flex-col gap-4" action="/chat/new">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="field-label" htmlFor="first">
-                  First name
-                </label>
-                <input
-                  id="first"
-                  name="first"
-                  autoComplete="given-name"
-                  required
-                  placeholder="Jane"
-                  className="field"
-                />
-              </div>
-              <div>
-                <label className="field-label" htmlFor="last">
-                  Last name
-                </label>
-                <input
-                  id="last"
-                  name="last"
-                  autoComplete="family-name"
-                  required
-                  placeholder="Doe"
-                  className="field"
-                />
-              </div>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            <div>
+              <label className="field-label" htmlFor="name">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                autoComplete="name"
+                required
+                placeholder="Jane Doe"
+                className="field"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={submitting}
+              />
             </div>
 
             <div>
               <label className="field-label" htmlFor="email">
-                Work email
+                Email
               </label>
               <input
                 id="email"
@@ -84,6 +96,9 @@ export default function RegisterPage() {
                 required
                 placeholder="jane@company.com"
                 className="field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={submitting}
               />
             </div>
 
@@ -100,12 +115,25 @@ export default function RegisterPage() {
                 minLength={8}
                 placeholder="At least 8 characters"
                 className="field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary w-full py-3 mt-2">
-              Create account
-              <Icon name="arrowRight" size={16} />
+            {error && (
+              <p className="text-[13px]" style={{ color: "#B3261E" }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary w-full py-3 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Creating account…" : "Create account"}
+              {!submitting && <Icon name="arrowRight" size={16} />}
             </button>
 
             <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-400)" }}>

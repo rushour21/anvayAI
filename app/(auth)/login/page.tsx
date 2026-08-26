@@ -1,16 +1,40 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Wordmark from "@/components/ui/Wordmark";
 import Icon from "@/components/ui/Icon";
-import OAuthButtons from "@/components/auth/OAuthButtons";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const signIn = useAuthStore((s) => s.signIn);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signIn({ email, password });
+      router.push("/chat/new");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main
       data-theme="light"
       className="min-h-dvh flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden"
       style={{ background: "var(--paper)" }}
     >
-      {/* Same atmosphere as the hero, dialled well down */}
       <div
         className="orb orb-1"
         style={{
@@ -41,9 +65,7 @@ export default function LoginPage() {
             Pick up where your research left off.
           </p>
 
-          <OAuthButtons label="Continue with Google" />
-
-          <form className="flex flex-col gap-4" action="/chat/new">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
               <label className="field-label" htmlFor="email">
                 Email
@@ -56,21 +78,15 @@ export default function LoginPage() {
                 required
                 placeholder="you@company.com"
                 className="field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={submitting}
               />
             </div>
             <div>
-              <div className="flex items-baseline justify-between mb-1.5">
-                <label className="field-label mb-0" htmlFor="password">
-                  Password
-                </label>
-                <Link
-                  href="#"
-                  className="text-[12.5px] font-medium"
-                  style={{ color: "var(--blue-600)" }}
-                >
-                  Forgot?
-                </Link>
-              </div>
+              <label className="field-label" htmlFor="password">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
@@ -79,23 +95,25 @@ export default function LoginPage() {
                 required
                 placeholder="••••••••"
                 className="field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
               />
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer mt-0.5">
-              <input
-                type="checkbox"
-                className="rounded"
-                style={{ accentColor: "var(--blue-600)", width: 15, height: 15 }}
-              />
-              <span className="text-[13.5px]" style={{ color: "var(--ink-500)" }}>
-                Keep me signed in
-              </span>
-            </label>
+            {error && (
+              <p className="text-[13px]" style={{ color: "#B3261E" }}>
+                {error}
+              </p>
+            )}
 
-            <button type="submit" className="btn btn-primary w-full py-3 mt-2">
-              Sign in
-              <Icon name="arrowRight" size={16} />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary w-full py-3 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Signing in…" : "Sign in"}
+              {!submitting && <Icon name="arrowRight" size={16} />}
             </button>
           </form>
 
