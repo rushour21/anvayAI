@@ -23,7 +23,7 @@ export default function SidebarToggle() {
         e.currentTarget.style.color = "var(--ink-400)";
       }}
     >
-      <Icon name="menu" size={16} />
+      <Icon name="panelLeft" size={16} />
     </button>
   );
 }

@@ -9,6 +9,7 @@ export default function ChatHistoryList() {
   const chatHistory = useChatStore((s) => s.chatHistory);
   const activeChatId = useChatStore((s) => s.activeChatId);
   const setActiveChatId = useChatStore((s) => s.setActiveChatId);
+  const deleteChat = useChatStore((s) => s.deleteChat);
 
   /* Bucketed against the store's fixed reference clock rather than a live
      Date.now(), which would be impure in render and desync hydration. */
@@ -52,6 +53,7 @@ export default function ChatHistoryList() {
                 title={chat.title}
                 isActive={chat.id === activeChatId}
                 onClick={() => setActiveChatId(chat.id)}
+                onDelete={() => deleteChat(chat.id)}
               />
             ))}
           </div>
