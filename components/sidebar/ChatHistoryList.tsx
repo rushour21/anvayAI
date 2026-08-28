@@ -1,15 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useChatStore, SESSION_START } from "@/stores/chatStore";
 import ChatHistoryItem from "./ChatHistoryItem";
 
 const DAY = 86_400_000;
 
 export default function ChatHistoryList() {
+  const router = useRouter();
   const chatHistory = useChatStore((s) => s.chatHistory);
   const activeChatId = useChatStore((s) => s.activeChatId);
-  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
   const deleteChat = useChatStore((s) => s.deleteChat);
+  const loadChatHistory = useChatStore((s) => s.loadChatHistory);
+
+  useEffect(() => {
+    loadChatHistory();
+  }, [loadChatHistory]);
 
   /* Bucketed against the store's fixed reference clock rather than a live
      Date.now(), which would be impure in render and desync hydration. */
@@ -52,7 +59,7 @@ export default function ChatHistoryList() {
                 key={chat.id}
                 title={chat.title}
                 isActive={chat.id === activeChatId}
-                onClick={() => setActiveChatId(chat.id)}
+                onClick={() => router.push(`/chat/${chat.id}`)}
                 onDelete={() => deleteChat(chat.id)}
               />
             ))}

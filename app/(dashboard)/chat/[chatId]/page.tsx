@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ChatContainer from "@/components/chat/ChatContainer";
 import InputCard from "@/components/input/InputCard";
 import { useChatStore } from "@/stores/chatStore";
@@ -25,6 +25,23 @@ function QueryHandoff() {
 }
 
 export default function ChatIdPage() {
+  const { chatId } = useParams<{ chatId: string }>();
+  const clearMessages = useChatStore((s) => s.clearMessages);
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
+  const loadConversation = useChatStore((s) => s.loadConversation);
+  const loadedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (loadedRef.current === chatId) return;
+    loadedRef.current = chatId;
+    if (chatId === "new") {
+      clearMessages();
+      setActiveChatId(null);
+    } else {
+      loadConversation(chatId);
+    }
+  }, [chatId, clearMessages, setActiveChatId, loadConversation]);
+
   return (
     <>
       <Suspense fallback={null}>

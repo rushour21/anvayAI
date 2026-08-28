@@ -33,22 +33,15 @@ interface ChatState {
   setSelectedModel: (model: ModelMeta) => void;
   setActiveChatId: (id: string | null) => void;
   clearMessages: () => void;
-  sendMessage: (content: string) => void;
-  deleteChat: (id: string) => void;
+  sendMessage: (content: string) => Promise<void>;
+  deleteChat: (id: string) => Promise<void>;
+  loadChatHistory: () => Promise<void>;
+  loadConversation: (id: string) => Promise<void>;
 }
 
-// Mock AI response data
-/* One reference clock for the seeded history. Buckets are derived from
-   differences against this, so server and client agree without reading the
-   clock during render. Real timestamps will come from the API. */
+/* Reference clock for "Today / Yesterday / Earlier" bucketing in the
+   sidebar — approximates "now" without reading Date.now() during render. */
 export const SESSION_START = Date.now();
-
-const MOCK_SOURCES = [
-  { id: "1", url: "https://arxiv.org", domain: "arxiv.org", title: "Preprint on long-context retrieval", agentColor: "var(--agent-search)" },
-  { id: "2", url: "https://github.com", domain: "github.com", title: "Reference implementation", agentColor: "var(--agent-code)" },
-  { id: "3", url: "https://nature.com", domain: "nature.com", title: "Peer-reviewed benchmark review", agentColor: "var(--agent-validator)" },
-];
-
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
@@ -56,12 +49,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   traceSteps: [],
   activeAgents: [...EMPTY_STATE_AGENTS],
   selectedModel: DEFAULT_MODEL,
-  chatHistory: [
-    { id: "1", title: "How does RAG work with vector DBs?", messages: [], createdAt: SESSION_START - 3600000, updatedAt: SESSION_START - 3600000 },
-    { id: "2", title: "Compare Next.js vs Remix", messages: [], createdAt: SESSION_START - 7200000, updatedAt: SESSION_START - 7200000 },
-    { id: "3", title: "Explain attention mechanisms", messages: [], createdAt: SESSION_START - 86400000, updatedAt: SESSION_START - 86400000 },
-    { id: "4", title: "Best practices for API design", messages: [], createdAt: SESSION_START - 172800000, updatedAt: SESSION_START - 172800000 },
-  ],
+  chatHistory: [],
   activeChatId: null,
 
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
@@ -94,22 +82,57 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setActiveChatId: (id) => set({ activeChatId: id }),
   clearMessages: () => set({ messages: [], traceSteps: [] }),
 
-  deleteChat: (id) =>
-    set((s) => {
-      const filtered = s.chatHistory.filter((c) => c.id !== id);
-      return {
-        chatHistory: filtered,
-        /* If the deleted chat was active, reset to empty state */
-        ...(s.activeChatId === id
-          ? { activeChatId: null, messages: [], traceSteps: [] }
-          : {}),
-      };
-    }),
+  loadChatHistory: async () => {
+    const res = await fetch("/api/conversations");
+    if (!res.ok) return;
+    const data = (await res.json()) as Array<{
+      id: string;
+      title: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    set({
+      chatHistory: data.map((c) => ({
+        id: c.id,
+        title: c.title,
+        messages: [],
+        createdAt: new Date(c.createdAt).getTime(),
+        updatedAt: new Date(c.updatedAt).getTime(),
+      })),
+    });
+  },
 
-  sendMessage: (content) => {
-    const { addMessage, setIsStreaming, setTraceSteps, activeAgents } = get();
+  loadConversation: async (id) => {
+    set({ activeChatId: id, messages: [], traceSteps: [] });
+    const res = await fetch(`/api/conversations/${id}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      messages: Array<{ id: string; role: "user" | "assistant"; content: string; createdAt: string }>;
+    };
+    set({
+      messages: data.messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.createdAt).getTime(),
+      })),
+    });
+  },
 
-    // Add user message
+  deleteChat: async (id) => {
+    const { activeChatId } = get();
+    set((s) => ({
+      chatHistory: s.chatHistory.filter((c) => c.id !== id),
+      ...(activeChatId === id
+        ? { activeChatId: null, messages: [], traceSteps: [] }
+        : {}),
+    }));
+    await fetch(`/api/conversations/${id}`, { method: "DELETE" }).catch(() => {});
+  },
+
+  sendMessage: async (content) => {
+    const { addMessage, setIsStreaming, updateLastAssistantMessage } = get();
+
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -119,65 +142,79 @@ export const useChatStore = create<ChatState>((set, get) => ({
     addMessage(userMsg);
     setIsStreaming(true);
 
-    // Three friendly phases, not seven internal pipeline steps — memory,
-    // gateway, and calculations run silently and never surface here.
-    // "Researching" only shows if the user left web/filings or their own
-    // documents switched on; analyzing and source-checking always run.
-    const traceAgents: AgentRole[] = [];
-    if (activeAgents.includes("search") || activeAgents.includes("rag")) {
-      traceAgents.push("search");
-    }
-    traceAgents.push("synthesizer");
-    traceAgents.push("validator");
+    try {
+      let chatId = get().activeChatId;
 
-    const trace: TraceStep[] = traceAgents.map((role) => ({
-      agent: role,
-      status: "pending" as const,
-    }));
-    setTraceSteps(trace);
+      if (!chatId) {
+        const title = content.length > 60 ? `${content.slice(0, 60)}…` : content;
+        const createRes = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        if (!createRes.ok) throw new Error("Failed to create conversation");
+        const created = (await createRes.json()) as { id: string; title: string };
+        chatId = created.id;
 
-    // Simulate agent trace animation
-    traceAgents.forEach((agent, i) => {
-      setTimeout(() => {
+        const now = Date.now();
         set((s) => ({
-          traceSteps: s.traceSteps.map((t) =>
-            t.agent === agent ? { ...t, status: "active" } : t
-          ),
+          activeChatId: chatId,
+          chatHistory: [
+            { id: chatId!, title: created.title, messages: [], createdAt: now, updatedAt: now },
+            ...s.chatHistory,
+          ],
         }));
-      }, i * 800);
-      setTimeout(() => {
-        set((s) => ({
-          traceSteps: s.traceSteps.map((t) =>
-            t.agent === agent ? { ...t, status: "complete" } : t
-          ),
-        }));
-      }, i * 800 + 600);
-    });
+        /* Reflect the real id in the URL without a full navigation — mirrors
+           the ?q= handoff's use of replaceState in app/(dashboard)/chat/[chatId]/page.tsx. */
+        window.history.replaceState(null, "", `/chat/${chatId}`);
+      }
 
-    // Add AI response after trace completes
-    setTimeout(() => {
-      const aiMsg: Message = {
+      const res = await fetch(`/api/conversations/${chatId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Something went wrong. Please try again."
+        );
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      let started = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        if (!full) continue;
+        if (!started) {
+          started = true;
+          addMessage({ id: crypto.randomUUID(), role: "assistant", content: full, timestamp: Date.now() });
+        } else {
+          updateLastAssistantMessage(full);
+        }
+      }
+
+      const finishedId = chatId;
+      set((s) => ({
+        chatHistory: s.chatHistory.map((c) =>
+          c.id === finishedId ? { ...c, updatedAt: Date.now() } : c
+        ),
+      }));
+    } catch {
+      addMessage({
         id: crypto.randomUUID(),
         role: "assistant",
-        content: [
-          `Here's what I found on "${content}".`,
-          "",
-          "The key points, checked against the sources below:",
-          "",
-          "1. The core mechanism is well established, and recent developments refine it rather than replace it.",
-          "2. The results hold up across the sources that were checked, though the margins narrow in edge cases.",
-          "3. The right call here depends on your specific constraints more than on the headline number.",
-          "",
-          "Anything I couldn't confirm from a real source was left out rather than guessed at.",
-          "",
-          "Want me to go deeper on any one of these?",
-        ].join("\n"),
+        content: "Something went wrong. Please try again.",
         timestamp: Date.now(),
-        sources: MOCK_SOURCES,
-        traceSteps: traceAgents.map((role) => ({ agent: role, status: "complete" })),
-      };
-      addMessage(aiMsg);
+      });
+    } finally {
       setIsStreaming(false);
-    }, traceAgents.length * 800 + 400);
+    }
   },
 }));

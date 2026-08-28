@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from "next/server";
+import { eq, asc } from "drizzle-orm";
+import { db } from "@/db";
+import { conversation, messages as messagesTable } from "@/db/schema";
+import { getAuthUserId } from "@/lib/auth/requireUser";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getAuthUserId(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  const convo = await db.query.conversation.findFirst({ where: eq(conversation.id, id) });
+  if (!convo || convo.userId !== userId) {
+    return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+  }
+
+  const rows = await db.query.messages.findMany({
+    where: eq(messagesTable.conversationId, id),
+    orderBy: asc(messagesTable.createdAt),
+  });
+
+  return NextResponse.json({
+    id: convo.id,
+    title: convo.title,
+    messages: rows.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      createdAt: m.createdAt.toISOString(),
+    })),
+  });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getAuthUserId(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  const convo = await db.query.conversation.findFirst({ where: eq(conversation.id, id) });
+  if (!convo || convo.userId !== userId) {
+    return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+  }
+
+  await db.delete(messagesTable).where(eq(messagesTable.conversationId, id));
+  await db.delete(conversation).where(eq(conversation.id, id));
+
+  return NextResponse.json({ ok: true });
+}
