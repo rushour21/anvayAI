@@ -34,6 +34,7 @@ export type IncomeStatementYear = {
   currency: string;
   revenue: number;
   grossProfit: number;
+  researchAndDevelopmentExpenses: number;
   operatingIncome: number;
   netIncome: number;
   ebitda: number;
@@ -51,6 +52,7 @@ export async function getIncomeStatement(symbol: string, limit = DEFAULT_LIMIT):
     currency: String(row.reportedCurrency ?? "USD"),
     revenue: Number(row.revenue ?? 0),
     grossProfit: Number(row.grossProfit ?? 0),
+    researchAndDevelopmentExpenses: Number(row.researchAndDevelopmentExpenses ?? 0),
     operatingIncome: Number(row.operatingIncome ?? 0),
     netIncome: Number(row.netIncome ?? 0),
     ebitda: Number(row.ebitda ?? 0),
