@@ -43,7 +43,17 @@ export type AgentEvent =
   | { type: "tool_complete"; tool: string };
 
 const MAX_STEPS = 8;
+/* Only meaningful when a fallback candidate actually exists — it exists to
+   abort a hung/rate-limited free model quickly and try the fallback. When
+   the primary model already IS the fallback (Auto escalates straight to
+   openai, or the user picked openai/gemma/etc. directly with no fallback
+   distinct from it), there is nothing to fall back to, so aborting early
+   only turns a slow-but-working multi-tool run into a hard failure — a
+   real bug hit in production on a two-company comparison query that needed
+   several tool calls before its first token. Use a much longer safety net
+   in that case instead. */
 const FIRST_EVENT_TIMEOUT_MS = 15000;
+const NO_FALLBACK_TIMEOUT_MS = 50000;
 
 /* ---- Minimal async push-queue used to merge the three concurrent
    ModelResult stream consumers (text / tool-start / tool-complete) into one
@@ -214,12 +224,13 @@ export async function* runFinancialAgent({
       (err) => queue.end(err)
     );
 
+    const timeoutMs = candidates.length > 1 ? FIRST_EVENT_TIMEOUT_MS : NO_FALLBACK_TIMEOUT_MS;
     let firstResult: IteratorResult<AgentEvent>;
     try {
       firstResult = await Promise.race([
         queue.next(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Agent run produced no output in time")), FIRST_EVENT_TIMEOUT_MS)
+          setTimeout(() => reject(new Error("Agent run produced no output in time")), timeoutMs)
         ),
       ]);
     } catch (err) {

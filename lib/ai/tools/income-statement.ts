@@ -10,9 +10,11 @@ const inputSchema = z.object({
 export const incomeStatementTool = tool({
   name: "get_income_statement",
   description:
-    "Returns annual income statement data (revenue, gross profit, operating income, net " +
-    "income, EBITDA, EPS) for a stock ticker, backed by real data (Financial Modeling Prep, " +
-    "from SEC filings). Input: { symbol, years? }. Returns one entry per fiscal year, most " +
+    "Returns annual income statement data (revenue, gross profit, R&D expense, operating " +
+    "income, net income, EBITDA, EPS) for a stock ticker, backed by real data (Financial " +
+    "Modeling Prep, from SEC filings). Use this (the researchAndDevelopmentExpenses field) " +
+    "for any R&D spend question — do not substitute operating cash flow or any other figure " +
+    "for R&D spend. Input: { symbol, years? }. Returns one entry per fiscal year, most " +
     "recent first.",
   inputSchema,
   execute: async ({ symbol, years }) => {
