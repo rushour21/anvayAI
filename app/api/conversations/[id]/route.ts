@@ -26,10 +26,12 @@ export async function GET(
   return NextResponse.json({
     id: convo.id,
     title: convo.title,
+    modelMode: convo.modelMode,
     messages: rows.map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,
+      modelUsed: m.modelUsed,
       createdAt: m.createdAt.toISOString(),
     })),
   });

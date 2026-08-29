@@ -3,7 +3,10 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { conversation, messages as messagesTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
-import { streamChat, type ChatMessage } from "@/lib/ai/openrouter";
+import type { ChatMessage } from "@/lib/ai/openrouter";
+import { runFinancialAgent, type AgentEvent } from "@/lib/ai/agent";
+import { selectModel } from "@/lib/ai/model-router";
+import { isModelMode } from "@/lib/ai/models";
 import { OpenRouterError } from "@openrouter/sdk/models/errors";
 
 function statusForUpstreamError(code: number): number {
@@ -44,11 +47,26 @@ export async function POST(
     content: m.content,
   }));
 
-  let modelStream;
+  // Per-message override (AGENTS.md Phase 2 §8) — falls back to the
+  // conversation's stored mode, and never gets written back onto it.
+  const effectiveMode = isModelMode(body?.mode) ? body.mode : convo.modelMode;
+  const primaryModel = selectModel(effectiveMode, content);
+
+  const generator = runFinancialAgent({
+    conversationId: id,
+    userId,
+    messages: chatMessages,
+    model: primaryModel,
+  });
+
+  // Drive the first event before responding, so a failure on every candidate
+  // model still surfaces as a normal HTTP error status instead of a
+  // silently-empty stream.
+  let first: IteratorResult<AgentEvent, { modelUsed: string }>;
   try {
-    modelStream = await streamChat({ messages: chatMessages });
+    first = await generator.next();
   } catch (err) {
-    console.error("OpenRouter request failed:", err);
+    console.error("Agent run failed:", err);
     const status = err instanceof OpenRouterError ? statusForUpstreamError(err.statusCode) : 500;
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
@@ -58,19 +76,27 @@ export async function POST(
 
   const encoder = new TextEncoder();
   let fullText = "";
+  let modelUsed = primaryModel;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const send = (event: AgentEvent) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
       try {
-        for await (const chunk of modelStream) {
-          const text = chunk.choices?.[0]?.delta?.content;
-          if (text) {
-            fullText += text;
-            controller.enqueue(encoder.encode(text));
+        if (!first.done) {
+          if (first.value.type === "text") fullText += first.value.text;
+          send(first.value);
+        }
+        while (true) {
+          const next = await generator.next();
+          if (next.done) {
+            modelUsed = next.value.modelUsed;
+            break;
           }
+          if (next.value.type === "text") fullText += next.value.text;
+          send(next.value);
         }
       } catch (err) {
-        console.error("OpenRouter stream failed:", err);
+        console.error("Agent stream failed:", err);
       } finally {
         controller.close();
         if (fullText) {
@@ -78,6 +104,7 @@ export async function POST(
             conversationId: id,
             role: "assistant",
             content: fullText,
+            modelUsed,
           });
           await db
             .update(conversation)
@@ -89,6 +116,6 @@ export async function POST(
   });
 
   return new Response(stream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8" },
   });
 }

@@ -1,8 +1,13 @@
 "use client";
 
 import { TraceStep } from "@/types/agent";
-import { AGENT_MAP } from "@/constants/agents";
+import { AgentRole } from "@/types/agent";
+import { AGENT_MAP, TOOL_DISPLAY } from "@/constants/agents";
 import AgentTraceDot from "./AgentTraceDot";
+
+function isAgentRole(agent: string): agent is AgentRole {
+  return agent in AGENT_MAP;
+}
 
 export default function AgentTrace({ steps }: { steps: TraceStep[] }) {
   if (!steps.length) return null;
@@ -13,7 +18,7 @@ export default function AgentTrace({ steps }: { steps: TraceStep[] }) {
       style={{ background: "var(--paper-sunk)", border: "1px solid var(--line)" }}
     >
       {steps.map((step, i) => {
-        const info = AGENT_MAP[step.agent];
+        const info = isAgentRole(step.agent) ? AGENT_MAP[step.agent] : TOOL_DISPLAY[step.agent];
         return (
           <div key={step.agent} className="flex items-center">
             <AgentTraceDot

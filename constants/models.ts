@@ -1,7 +1,9 @@
 import { ModelMeta, ModelProvider } from "@/types/llm";
 
-/* Model IDs here are catalogue/display data. Verify each against the
-   provider's current docs when the Model Gateway is wired (Phase 2). */
+/* `id` here is a MODE string ("auto" | "openai" | "gemma" | "nemotron" |
+   "minimax"), not a raw OpenRouter model id — the frontend never learns the
+   real model id (AGENTS.md Phase 2 §1). The mode→model mapping lives in
+   lib/ai/models.ts, the one place both sides agree on. */
 
 const TAG_COLOR = {
   Frontier: "#4F46E5",
@@ -11,56 +13,70 @@ const TAG_COLOR = {
 } as const;
 
 const BRAND = {
+  auto: "#4F46E5",
   openai: "#10A37F",
   google: "#3B6EF5",
-  deepseek: "#4D6BFE",
-  meta: "#6D7FF0",
+  nvidia: "#76B900",
+  minimax: "#F5544D",
 } as const;
 
 export const MODELS: ModelMeta[] = [
   {
-    id: "gpt-4o",
-    name: "GPT-4o",
+    id: "auto",
+    name: "Auto",
+    provider: "auto",
+    access: "router",
+    description: "Picks a fast free model for simple questions, OpenAI for complex ones.",
+    tag: "Fast",
+    tagColor: TAG_COLOR.Fast,
+    iconColor: BRAND.auto,
+    contextK: 128,
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
     provider: "openai",
-    access: "direct",
-    description: "Strong all-rounder. Good default for most questions.",
+    access: "router",
+    description: "Strong all-rounder. Good default for complex questions.",
     tag: "Frontier",
     tagColor: TAG_COLOR.Frontier,
     iconColor: BRAND.openai,
     contextK: 128,
   },
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
+    id: "gemma",
+    name: "Gemma",
     provider: "google",
-    access: "direct",
-    description: "Handles very long documents without slowing down.",
-    tag: "Fast",
-    tagColor: TAG_COLOR.Fast,
-    iconColor: BRAND.google,
-    contextK: 1000,
-  },
-  {
-    id: "deepseek/deepseek-chat",
-    name: "DeepSeek V3",
-    provider: "deepseek",
     access: "router",
-    description: "Especially sharp on maths, code, and step-by-step logic.",
-    tag: "Frontier",
-    tagColor: TAG_COLOR.Frontier,
-    iconColor: BRAND.deepseek,
-    contextK: 128,
-  },
-  {
-    id: "meta-llama/llama-4-scout:free",
-    name: "Llama 4 Scout",
-    provider: "meta",
-    access: "router",
-    description: "Open weights, long context, and free to use.",
+    description: "Google's free model. Fast and free to use.",
     tag: "Free",
     tagColor: TAG_COLOR.Free,
-    iconColor: BRAND.meta,
-    contextK: 512,
+    iconColor: BRAND.google,
+    contextK: 128,
+    free: true,
+  },
+  {
+    id: "nemotron",
+    name: "Nemotron",
+    provider: "nvidia",
+    access: "router",
+    description: "NVIDIA's free model. Fast and free to use.",
+    tag: "Free",
+    tagColor: TAG_COLOR.Free,
+    iconColor: BRAND.nvidia,
+    contextK: 128,
+    free: true,
+  },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    provider: "minimax",
+    access: "router",
+    description: "MiniMax's free model. Fast and free to use.",
+    tag: "Free",
+    tagColor: TAG_COLOR.Free,
+    iconColor: BRAND.minimax,
+    contextK: 128,
     free: true,
   },
 ];
@@ -76,6 +92,9 @@ export const PROVIDER_LABEL: Record<ModelProvider, string> = {
   qwen: "Alibaba",
   mistral: "Mistral",
   ollama: "Ollama",
+  nvidia: "NVIDIA",
+  minimax: "MiniMax",
+  auto: "Auto",
 };
 
 export const FREE_MODELS = MODELS.filter((m) => m.free);

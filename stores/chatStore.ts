@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { Message, Chat } from "@/types/chat";
 import { AgentRole, TraceStep } from "@/types/agent";
 import { ModelMeta } from "@/types/llm";
-import { DEFAULT_MODEL } from "@/constants/models";
+import { DEFAULT_MODEL, MODELS } from "@/constants/models";
 import { EMPTY_STATE_AGENTS } from "@/constants/agents";
 
 interface ChatState {
@@ -27,7 +27,8 @@ interface ChatState {
   addMessage: (msg: Message) => void;
   updateLastAssistantMessage: (content: string) => void;
   setTraceSteps: (steps: TraceStep[]) => void;
-  updateTraceStep: (agent: AgentRole, status: TraceStep["status"]) => void;
+  updateTraceStep: (agent: AgentRole | string, status: TraceStep["status"]) => void;
+  startTraceStep: (agent: string) => void;
   setIsStreaming: (v: boolean) => void;
   toggleAgent: (agent: AgentRole) => void;
   setSelectedModel: (model: ModelMeta) => void;
@@ -71,6 +72,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ),
     })),
 
+  /* Phase 3 tool_start events (AGENTS.md Phase 3 §11) — reuses the same
+     trace-step UI that was originally built for the Phase 1 mock. */
+  startTraceStep: (agent) =>
+    set((s) => {
+      const exists = s.traceSteps.some((t) => t.agent === agent);
+      if (exists) {
+        return {
+          traceSteps: s.traceSteps.map((t) =>
+            t.agent === agent ? { ...t, status: "active" as const } : t
+          ),
+        };
+      }
+      return { traceSteps: [...s.traceSteps, { agent, status: "active" as const }] };
+    }),
+
   setIsStreaming: (v) => set({ isStreaming: v }),
   toggleAgent: (agent) =>
     set((s) => ({
@@ -107,8 +123,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const res = await fetch(`/api/conversations/${id}`);
     if (!res.ok) return;
     const data = (await res.json()) as {
+      modelMode: string;
       messages: Array<{ id: string; role: "user" | "assistant"; content: string; createdAt: string }>;
     };
+    const restoredModel = MODELS.find((m) => m.id === data.modelMode);
     set({
       messages: data.messages.map((m) => ({
         id: m.id,
@@ -116,6 +134,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         content: m.content,
         timestamp: new Date(m.createdAt).getTime(),
       })),
+      ...(restoredModel ? { selectedModel: restoredModel } : {}),
     });
   },
 
@@ -131,7 +150,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendMessage: async (content) => {
-    const { addMessage, setIsStreaming, updateLastAssistantMessage } = get();
+    const { addMessage, setIsStreaming, updateLastAssistantMessage, selectedModel, startTraceStep, updateTraceStep } = get();
 
     const userMsg: Message = {
       id: crypto.randomUUID(),
@@ -150,7 +169,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const createRes = await fetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title }),
+          body: JSON.stringify({ title, modelMode: selectedModel.id }),
         });
         if (!createRes.ok) throw new Error("Failed to create conversation");
         const created = (await createRes.json()) as { id: string; title: string };
@@ -172,7 +191,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const res = await fetch(`/api/conversations/${chatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, mode: selectedModel.id }),
       });
 
       if (!res.ok || !res.body) {
@@ -186,17 +205,45 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const decoder = new TextDecoder();
       let full = "";
       let started = false;
+      let buffer = "";
+
+      const handleEvent = (event: { type: "text"; text: string } | { type: "tool_start"; tool: string } | { type: "tool_complete"; tool: string }) => {
+        if (event.type === "text") {
+          full += event.text;
+          if (!full) return;
+          if (!started) {
+            started = true;
+            addMessage({ id: crypto.randomUUID(), role: "assistant", content: full, timestamp: Date.now() });
+          } else {
+            updateLastAssistantMessage(full);
+          }
+        } else if (event.type === "tool_start") {
+          startTraceStep(event.tool);
+        } else if (event.type === "tool_complete") {
+          updateTraceStep(event.tool, "complete");
+        }
+      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        full += decoder.decode(value, { stream: true });
-        if (!full) continue;
-        if (!started) {
-          started = true;
-          addMessage({ id: crypto.randomUUID(), role: "assistant", content: full, timestamp: Date.now() });
-        } else {
-          updateLastAssistantMessage(full);
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            handleEvent(JSON.parse(line));
+          } catch {
+            // Ignore malformed lines rather than crashing the stream.
+          }
+        }
+      }
+      if (buffer.trim()) {
+        try {
+          handleEvent(JSON.parse(buffer));
+        } catch {
+          // Ignore a malformed trailing line.
         }
       }
 
