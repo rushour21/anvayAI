@@ -55,6 +55,14 @@ const MAX_STEPS = 8;
 const FIRST_EVENT_TIMEOUT_MS = 15000;
 const NO_FALLBACK_TIMEOUT_MS = 50000;
 
+/* Production-only (never seen locally) transient failure from inside
+   @openrouter/sdk's own response-parsing on a follow-up turn after a tool
+   call — most likely a stale/corrupted keep-alive connection reused in
+   Vercel's serverless environment, not a real conversation problem. Retried
+   once, same model, only if no assistant text has reached the user yet. */
+const TRANSIENT_SDK_ERROR_MESSAGE = "Unexpected response type from API";
+const MAX_TRANSIENT_RETRIES = 1;
+
 /* ---- Minimal async push-queue used to merge the three concurrent
    ModelResult stream consumers (text / tool-start / tool-complete) into one
    ordered event stream for the route to await/yield from. ---- */
@@ -181,9 +189,16 @@ export async function* runFinancialAgent({
   const candidates = model === FALLBACK_MODEL ? [model] : [model, FALLBACK_MODEL];
   let lastError: unknown = null;
 
+  candidateLoop:
   for (let i = 0; i < candidates.length; i++) {
     const candidateModel = candidates[i];
     const isLastCandidate = i === candidates.length - 1;
+
+    let sawText = false;
+    let transientRetriesLeft = MAX_TRANSIENT_RETRIES;
+
+    retryCandidate:
+    while (true) {
     const doomLoopFlag = { tripped: false };
 
     const tools = instrumentTools(run.id);
@@ -200,6 +215,7 @@ export async function* runFinancialAgent({
 
     const textLoop = (async () => {
       for await (const delta of result.getTextStream()) {
+        sawText = true;
         queue.push({ type: "text", text: delta });
       }
     })();
@@ -237,12 +253,21 @@ export async function* runFinancialAgent({
       await result.cancel().catch(() => {});
       lastError = err;
       console.error(`[agent] candidate failed conversationId=${conversationId} model=${candidateModel}:`, err);
-      if (isLastCandidate) break;
-      continue;
+      const isTransient = err instanceof Error && err.message === TRANSIENT_SDK_ERROR_MESSAGE;
+      if (isTransient && transientRetriesLeft > 0) {
+        transientRetriesLeft -= 1;
+        console.warn(
+          `[agent] retrying candidate after transient SDK error conversationId=${conversationId} model=${candidateModel}`
+        );
+        continue retryCandidate;
+      }
+      if (isLastCandidate) break candidateLoop;
+      continue candidateLoop;
     }
 
     // Something is flowing — no more fallback from here (can't splice two
-    // partial answers together).
+    // partial answers together), except a same-model retry for the known
+    // transient SDK error below.
     try {
       if (!firstResult.done) yield firstResult.value;
       while (true) {
@@ -253,7 +278,15 @@ export async function* runFinancialAgent({
     } catch (err) {
       lastError = err;
       console.error(`[agent] stream failed mid-run conversationId=${conversationId} model=${candidateModel}:`, err);
-      break;
+      const isTransient = err instanceof Error && err.message === TRANSIENT_SDK_ERROR_MESSAGE;
+      if (isTransient && !sawText && transientRetriesLeft > 0) {
+        transientRetriesLeft -= 1;
+        console.warn(
+          `[agent] retrying candidate after transient SDK error conversationId=${conversationId} model=${candidateModel}`
+        );
+        continue retryCandidate;
+      }
+      break candidateLoop;
     }
 
     const finalResponse = await result.getResponse().catch(() => null);
@@ -273,6 +306,7 @@ export async function* runFinancialAgent({
     );
 
     return { modelUsed: candidateModel };
+    }
   }
 
   const message = lastError instanceof Error ? lastError.message : "Agent run failed";
