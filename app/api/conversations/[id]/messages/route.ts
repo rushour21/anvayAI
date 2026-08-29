@@ -97,6 +97,14 @@ export async function POST(
         }
       } catch (err) {
         console.error("Agent stream failed:", err);
+        // A mid-run failure (e.g. a transient upstream/SDK error on a
+        // follow-up turn after a tool already ran) would otherwise leave
+        // the client with a stream that just stops — always surface a
+        // clean message when no text made it out at all.
+        if (!fullText) {
+          fullText = "Something went wrong. Please try again.";
+          send({ type: "text", text: fullText });
+        }
       } finally {
         controller.close();
         if (fullText) {
