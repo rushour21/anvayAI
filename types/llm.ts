@@ -6,7 +6,11 @@ export type ModelProvider =
   | "deepseek"
   | "qwen"
   | "mistral"
-  | "ollama";
+  | "ollama"
+  | "nvidia"
+  | "minimax"
+  /* Not a real provider — the Auto mode tile (Phase 2). */
+  | "auto";
 
 /** How the model is reached at runtime. Drives routing and cost accounting. */
 export type ModelAccess =

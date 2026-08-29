@@ -15,6 +15,20 @@
       "when": 1787949833426,
       "tag": "0001_parched_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788013169612,
+      "tag": "0002_sour_roughhouse",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788016067106,
+      "tag": "0003_fuzzy_beast",
+      "breakpoints": true
     }
   ]
 }

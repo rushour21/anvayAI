@@ -97,3 +97,30 @@ export const PIPELINE_ORDER: AgentRole[] = [
   "synthesizer",
   "validator",
 ];
+
+/** Display info for real Phase 3 tool names, driving the same AgentTrace UI
+    as AGENT_MAP but keyed by the agent's actual tool names. */
+export const TOOL_DISPLAY: Record<string, { label: string; icon: IconName; color: string }> = {
+  // Market
+  get_stock_price: { label: "Fetching stock price", icon: "layers", color: "var(--agent-code)" },
+  get_historical_prices: { label: "Fetching price history", icon: "layers", color: "var(--agent-code)" },
+  get_market_cap: { label: "Fetching market cap", icon: "layers", color: "var(--agent-code)" },
+  // Statements
+  get_financials: { label: "Fetching financial data", icon: "document", color: "var(--agent-rag)" },
+  get_income_statement: { label: "Fetching income statement", icon: "document", color: "var(--agent-rag)" },
+  get_balance_sheet: { label: "Fetching balance sheet", icon: "document", color: "var(--agent-rag)" },
+  get_cash_flow: { label: "Fetching cash flow statement", icon: "document", color: "var(--agent-rag)" },
+  // Ratios
+  get_pe: { label: "Calculating P/E ratio", icon: "code", color: "var(--agent-code)" },
+  get_pb: { label: "Calculating P/B ratio", icon: "code", color: "var(--agent-code)" },
+  get_ev_ebitda: { label: "Calculating EV/EBITDA", icon: "code", color: "var(--agent-code)" },
+  get_roe: { label: "Calculating ROE", icon: "code", color: "var(--agent-code)" },
+  get_roic: { label: "Calculating ROIC", icon: "code", color: "var(--agent-code)" },
+  get_margins: { label: "Calculating margins", icon: "code", color: "var(--agent-code)" },
+  calculate_metric: { label: "Calculating", icon: "code", color: "var(--agent-code)" },
+  // Company/research
+  get_company_profile: { label: "Company profile", icon: "document", color: "var(--agent-rag)" },
+  search_web: { label: "Searching the web", icon: "globe", color: "var(--agent-search)" },
+  search_news: { label: "Searching recent news", icon: "globe", color: "var(--agent-search)" },
+  search_filings: { label: "Searching SEC filings", icon: "globe", color: "var(--agent-search)" },
+};

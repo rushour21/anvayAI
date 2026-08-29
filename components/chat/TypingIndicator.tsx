@@ -1,14 +1,23 @@
 "use client";
 
 import { useChatStore } from "@/stores/chatStore";
-import { AGENT_MAP } from "@/constants/agents";
+import { AgentRole } from "@/types/agent";
+import { AGENT_MAP, TOOL_DISPLAY } from "@/constants/agents";
 import AssistantAvatar from "./AssistantAvatar";
 import AgentTrace from "./AgentTrace";
+
+function isAgentRole(agent: string): agent is AgentRole {
+  return agent in AGENT_MAP;
+}
 
 export default function TypingIndicator() {
   const traceSteps = useChatStore((s) => s.traceSteps);
   const activeStep = traceSteps.find((s) => s.status === "active");
-  const active = activeStep ? AGENT_MAP[activeStep.agent] : null;
+  const active = activeStep
+    ? isAgentRole(activeStep.agent)
+      ? AGENT_MAP[activeStep.agent]
+      : TOOL_DISPLAY[activeStep.agent]
+    : null;
 
   return (
     <div className="flex gap-3 animate-fade-up">
@@ -44,12 +53,9 @@ export default function TypingIndicator() {
 
         <p className="text-[12px]" style={{ color: "var(--ink-400)" }}>
           {active ? (
-            <>
-              <span style={{ color: active.color, fontWeight: 500 }}>
-                {active.label}
-              </span>{" "}
-              {active.description.toLowerCase()}…
-            </>
+            <span style={{ color: active.color, fontWeight: 500 }}>
+              {active.label}…
+            </span>
           ) : (
             "Routing your question…"
           )}
