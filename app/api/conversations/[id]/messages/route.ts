@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { conversation, messages as messagesTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
 import type { ChatMessage } from "@/lib/ai/openrouter";
-import { runFinancialAgent, type AgentEvent } from "@/lib/ai/agent";
+import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
 import { selectModel } from "@/lib/ai/model-router";
 import { isModelMode } from "@/lib/ai/models";
 import { OpenRouterError } from "@openrouter/sdk/models/errors";
@@ -66,7 +66,7 @@ export async function POST(
   try {
     first = await generator.next();
   } catch (err) {
-    console.error("Agent run failed:", err);
+    console.error("Agent run failed:", describeError(err));
     const status = err instanceof OpenRouterError ? statusForUpstreamError(err.statusCode) : 500;
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
@@ -96,7 +96,7 @@ export async function POST(
           send(next.value);
         }
       } catch (err) {
-        console.error("Agent stream failed:", err);
+        console.error("Agent stream failed:", describeError(err));
         // A mid-run failure (e.g. a transient upstream/SDK error on a
         // follow-up turn after a tool already ran) would otherwise leave
         // the client with a stream that just stops — always surface a
