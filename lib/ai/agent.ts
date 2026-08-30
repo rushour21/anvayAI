@@ -318,6 +318,13 @@ export async function* runFinancialAgent({
         );
         continue retryCandidate;
       }
+      // No text has reached the user yet even after the retry — safe to
+      // fall through to the next actual candidate model, not just give up
+      // on the whole run (only bail entirely once real content has flowed).
+      if (!sawText) {
+        if (isLastCandidate) break candidateLoop;
+        continue candidateLoop;
+      }
       break candidateLoop;
     }
 
