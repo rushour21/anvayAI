@@ -7,7 +7,7 @@ import type { ChatMessage } from "@/lib/ai/openrouter";
 import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
 import { selectModel } from "@/lib/ai/model-router";
 import { isModelMode } from "@/lib/ai/models";
-import { OpenRouterError } from "@openrouter/sdk/models/errors";
+import { OpenRouterError, PaymentRequiredResponseError } from "@openrouter/sdk/models/errors";
 
 /* Vercel's default function timeout (10s) was silently killing agent runs
    mid-stream whenever a tool call took longer than that — e.g. search_news/
@@ -18,8 +18,18 @@ import { OpenRouterError } from "@openrouter/sdk/models/errors";
 export const maxDuration = 60;
 
 function statusForUpstreamError(code: number): number {
-  if (code === 401 || code === 429 || code === 400) return code;
+  if (code === 401 || code === 402 || code === 429 || code === 400) return code;
   return 502;
+}
+
+// Retrying never helps a 402 — it's an account balance issue, not a
+// transient failure — so it gets a distinct, actionable message instead of
+// the generic fallback.
+function userMessageForError(err: unknown): string {
+  if (err instanceof PaymentRequiredResponseError) {
+    return "Your OpenRouter account doesn't have enough credits for this request. Add credits at openrouter.ai and try again.";
+  }
+  return "Something went wrong. Please try again.";
 }
 
 export async function POST(
@@ -76,10 +86,7 @@ export async function POST(
   } catch (err) {
     console.error("Agent run failed:", describeError(err));
     const status = err instanceof OpenRouterError ? statusForUpstreamError(err.statusCode) : 500;
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status }
-    );
+    return NextResponse.json({ error: userMessageForError(err) }, { status });
   }
 
   const encoder = new TextEncoder();
@@ -110,7 +117,7 @@ export async function POST(
         // the client with a stream that just stops — always surface a
         // clean message when no text made it out at all.
         if (!fullText) {
-          fullText = "Something went wrong. Please try again.";
+          fullText = userMessageForError(err);
           send({ type: "text", text: fullText });
         }
       } finally {
