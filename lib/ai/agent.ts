@@ -63,6 +63,34 @@ const NO_FALLBACK_TIMEOUT_MS = 50000;
 const TRANSIENT_SDK_ERROR_MESSAGE = "Unexpected response type from API";
 const MAX_TRANSIENT_RETRIES = 1;
 
+/* The SDK throws a plain Error for this failure mode (not one of its typed
+   HTTP error classes), so the raw response detail that would explain WHY
+   isn't on the error itself in an obvious place. Node's fetch errors chain
+   the real underlying cause via `.cause` (e.g. a TLS/parse/socket error) —
+   surface that explicitly since Vercel's log viewer doesn't reliably show
+   it from a plain console.error(err) with a minified stack. */
+export function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const parts = [`${err.name}: ${err.message}`];
+  let cause: unknown = (err as { cause?: unknown }).cause;
+  let depth = 0;
+  while (cause && depth < 5) {
+    if (cause instanceof Error) {
+      const extra = Object.getOwnPropertyNames(cause)
+        .filter((k) => !["name", "message", "stack", "cause"].includes(k))
+        .map((k) => `${k}=${JSON.stringify((cause as Record<string, unknown>)[k])}`)
+        .join(" ");
+      parts.push(`caused by ${cause.name}: ${cause.message}${extra ? ` (${extra})` : ""}`);
+      cause = (cause as { cause?: unknown }).cause;
+    } else {
+      parts.push(`caused by ${JSON.stringify(cause)}`);
+      cause = undefined;
+    }
+    depth += 1;
+  }
+  return parts.join(" | ");
+}
+
 /* ---- Minimal async push-queue used to merge the three concurrent
    ModelResult stream consumers (text / tool-start / tool-complete) into one
    ordered event stream for the route to await/yield from. ---- */
@@ -252,7 +280,9 @@ export async function* runFinancialAgent({
     } catch (err) {
       await result.cancel().catch(() => {});
       lastError = err;
-      console.error(`[agent] candidate failed conversationId=${conversationId} model=${candidateModel}:`, err);
+      console.error(
+        `[agent] candidate failed conversationId=${conversationId} model=${candidateModel}: ${describeError(err)}`
+      );
       const isTransient = err instanceof Error && err.message === TRANSIENT_SDK_ERROR_MESSAGE;
       if (isTransient && transientRetriesLeft > 0) {
         transientRetriesLeft -= 1;
@@ -277,7 +307,9 @@ export async function* runFinancialAgent({
       }
     } catch (err) {
       lastError = err;
-      console.error(`[agent] stream failed mid-run conversationId=${conversationId} model=${candidateModel}:`, err);
+      console.error(
+        `[agent] stream failed mid-run conversationId=${conversationId} model=${candidateModel}: ${describeError(err)}`
+      );
       const isTransient = err instanceof Error && err.message === TRANSIENT_SDK_ERROR_MESSAGE;
       if (isTransient && !sawText && transientRetriesLeft > 0) {
         transientRetriesLeft -= 1;
@@ -314,6 +346,8 @@ export async function* runFinancialAgent({
     .update(agentRuns)
     .set({ status: "error", completedAt: new Date(), error: message })
     .where(eq(agentRuns.id, run.id));
-  console.error(`[agent] run failed conversationId=${conversationId} userId=${userId} error=${message}`);
+  console.error(
+    `[agent] run failed conversationId=${conversationId} userId=${userId} error=${describeError(lastError)}`
+  );
   throw lastError instanceof Error ? lastError : new Error(message);
 }
