@@ -29,7 +29,7 @@ export const conversation = pgTable("conversations", {
 
 export const messages = pgTable("messages",{
   id: uuid("id").primaryKey().defaultRandom(),
-  conversationId: uuid("conversation_id").references(() => conversation.id).notNull(),
+  conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "cascade" }).notNull(),
   role: text("role").notNull(),
   content: text("content").notNull(),
   /* Actual OpenRouter model id used, e.g. "google/gemma-4-26b-a4b-it:free" —
@@ -42,7 +42,7 @@ export const messages = pgTable("messages",{
    callModel() run, so agent behavior can be debugged without grepping logs. */
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").primaryKey().defaultRandom(),
-  conversationId: uuid("conversation_id").references(() => conversation.id).notNull(),
+  conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "cascade" }).notNull(),
   model: text("model").notNull(),
   status: text("status").notNull(), // "running" | "complete" | "error"
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
@@ -52,7 +52,7 @@ export const agentRuns = pgTable("agent_runs", {
 
 export const toolCalls = pgTable("tool_calls", {
   id: uuid("id").primaryKey().defaultRandom(),
-  agentRunId: uuid("agent_run_id").references(() => agentRuns.id).notNull(),
+  agentRunId: uuid("agent_run_id").references(() => agentRuns.id, { onDelete: "cascade" }).notNull(),
   toolName: text("tool_name").notNull(),
   input: text("input").notNull(), // JSON-stringified
   output: text("output"), // JSON-stringified
