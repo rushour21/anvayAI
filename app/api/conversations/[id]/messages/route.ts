@@ -9,6 +9,14 @@ import { selectModel } from "@/lib/ai/model-router";
 import { isModelMode } from "@/lib/ai/models";
 import { OpenRouterError } from "@openrouter/sdk/models/errors";
 
+/* Vercel's default function timeout (10s) was silently killing agent runs
+   mid-stream whenever a tool call took longer than that — e.g. search_news/
+   search_web's real web-search-augmented OpenRouter call, or a multi-tool
+   comparison query. The client saw a "200" with a truncated/empty NDJSON
+   body (headers had already been sent) rather than any error, since the
+   platform kills the process, not our own code. */
+export const maxDuration = 60;
+
 function statusForUpstreamError(code: number): number {
   if (code === 401 || code === 429 || code === 400) return code;
   return 502;
