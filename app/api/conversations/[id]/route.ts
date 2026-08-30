@@ -51,7 +51,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
   }
 
-  await db.delete(messagesTable).where(eq(messagesTable.conversationId, id));
+  // messages/agent_runs/tool_calls all cascade-delete via their FK to
+  // conversations/agent_runs (db/schema.ts) — no manual cleanup needed.
   await db.delete(conversation).where(eq(conversation.id, id));
 
   return NextResponse.json({ ok: true });

@@ -29,6 +29,13 @@
       "when": 1788016067106,
       "tag": "0003_fuzzy_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788115266210,
+      "tag": "0004_cascade_delete_fks",
+      "breakpoints": true
     }
   ]
 }
