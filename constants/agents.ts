@@ -123,4 +123,7 @@ export const TOOL_DISPLAY: Record<string, { label: string; icon: IconName; color
   search_web: { label: "Searching the web", icon: "globe", color: "var(--agent-search)" },
   search_news: { label: "Searching recent news", icon: "globe", color: "var(--agent-search)" },
   search_filings: { label: "Searching SEC filings", icon: "globe", color: "var(--agent-search)" },
+  // Skills
+  list_skills: { label: "Checking available workflows", icon: "layers", color: "var(--agent-gateway)" },
+  load_skill: { label: "Loading research workflow", icon: "layers", color: "var(--agent-gateway)" },
 };

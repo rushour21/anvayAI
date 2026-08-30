@@ -12,6 +12,13 @@ const nextConfig = {
      `require()` it unmodified from node_modules at runtime instead of
      bundling/minifying it. */
   serverExternalPackages: ["@openrouter/sdk"],
+  /* skills/*.md are read via fs.readFileSync() at runtime (lib/skills/loader.ts),
+     not statically imported, so Next.js's build-time file tracing (@vercel/nft)
+     won't automatically include them in the deployed serverless function bundle.
+     Without this, load_skill would throw ENOENT / return 404s in production. */
+  outputFileTracingIncludes: {
+    "/*": ["./skills/**/*"],
+  },
 };
 
 export default nextConfig;
