@@ -13,12 +13,23 @@ import { getClient } from "../openrouter";
 
 const SEARCH_MODEL = "openai/gpt-4o-mini";
 
-const SEARCH_SYSTEM_PROMPT =
-  "You are a web search assistant. Search the web for the user's query and reply with a " +
-  "short, plain factual summary of what you found (2-4 sentences, no Markdown, no headings, " +
-  "no bullet lists — sentences and paragraphs only), followed by a final line starting with " +
-  "'Sources:' listing each source as 'Title — URL', comma-separated. If search found nothing " +
-  "useful, say so plainly instead of guessing.";
+function buildSearchSystemPrompt(): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    `Today's date is ${today}. You are a web search assistant with live web search enabled ` +
+    "for this request. Base your answer STRICTLY on the actual search results returned to " +
+    "you just now — never describe anything from your own training knowledge as if it were " +
+    `current, since that knowledge has a fixed cutoff and may already be out of date relative ` +
+    `to ${today}. If the search results are ambiguous, outdated, or don't clearly answer the ` +
+    "query, say so explicitly rather than filling the gap with remembered or guessed " +
+    "information. Never invent a product name, date, figure, or event that isn't directly " +
+    "supported by a specific search result. Reply with a short, plain factual summary of " +
+    "what you found (2-4 sentences, no Markdown, no headings, no bullet lists — sentences " +
+    "and paragraphs only), followed by a final line starting with 'Sources:' listing each " +
+    "source as 'Title — URL', comma-separated. If search found nothing useful, say so " +
+    "plainly instead of guessing."
+  );
+}
 
 const inputSchema = z.object({
   query: z.string().describe("Search query, e.g. 'Apple Q4 2025 earnings'"),
@@ -40,7 +51,7 @@ export const searchWebTool = tool({
         chatRequest: {
           model: SEARCH_MODEL,
           messages: [
-            { role: "system", content: SEARCH_SYSTEM_PROMPT },
+            { role: "system", content: buildSearchSystemPrompt() },
             { role: "user", content: trimmed },
           ],
           plugins: [{ id: "web", maxResults: 5 }],

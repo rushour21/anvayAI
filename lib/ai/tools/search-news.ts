@@ -9,13 +9,24 @@ import { getClient } from "../openrouter";
 
 const NEWS_MODEL = "openai/gpt-4o-mini";
 
-const NEWS_SYSTEM_PROMPT =
-  "You are a financial news search assistant. Search the web for recent news specifically " +
-  "(prioritize the last few days to weeks) about the user's query and reply with a short, " +
-  "plain factual summary (2-4 sentences, no Markdown, no headings, no bullet lists — " +
-  "sentences and paragraphs only), followed by a final line starting with 'Sources:' " +
-  "listing each source as 'Title — URL', comma-separated, including publish dates where " +
-  "available. If no recent news was found, say so plainly instead of guessing.";
+function buildNewsSystemPrompt(): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    `Today's date is ${today}. You are a financial news search assistant with live web ` +
+    "search enabled for this request. Base your answer STRICTLY on the actual search " +
+    "results returned to you just now — never describe anything from your own training " +
+    "knowledge as if it were current news, since that knowledge has a fixed cutoff and may " +
+    `already be a year or more out of date relative to ${today}. If a search result's own ` +
+    "date is more than a few weeks before today, or the search didn't clearly return " +
+    "current results, say so explicitly instead of presenting old or remembered " +
+    "information as \"the latest\". Never invent a product name, date, or event that isn't " +
+    "directly supported by a specific search result. Reply with a short, plain factual " +
+    "summary (2-4 sentences, no Markdown, no headings, no bullet lists — sentences and " +
+    "paragraphs only), followed by a final line starting with 'Sources:' listing each " +
+    "source as 'Title — URL', comma-separated, including each item's actual publish date. " +
+    "If no recent news was found, say so plainly instead of guessing."
+  );
+}
 
 const inputSchema = z.object({
   query: z.string().describe("News search query, e.g. 'Apple product announcement'"),
@@ -36,7 +47,7 @@ export const searchNewsTool = tool({
         chatRequest: {
           model: NEWS_MODEL,
           messages: [
-            { role: "system", content: NEWS_SYSTEM_PROMPT },
+            { role: "system", content: buildNewsSystemPrompt() },
             { role: "user", content: trimmed },
           ],
           plugins: [{ id: "web", maxResults: 5 }],
