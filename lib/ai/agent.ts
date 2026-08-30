@@ -35,7 +35,13 @@ const AGENT_SYSTEM_PROMPT =
   "message. When a tool result includes a source (a filing, a search result, a named data " +
   "provider), cite it by name in your answer; if a fact has no source attached, don't " +
   "invent one. Clearly separate what the data says, what a calculation computed, and what " +
-  "is your own analysis — don't present your interpretation as a verified fact.";
+  "is your own analysis — don't present your interpretation as a verified fact. For a " +
+  "request that matches a named research workflow — financial-analysis, equity-research, " +
+  "valuation-analysis, or earnings-analysis (e.g. \"analyze X's revenue growth\", " +
+  "\"research X\", \"valuation analysis of X\", \"how were X's earnings\") — call " +
+  "load_skill with that name first and follow its recommended workflow, tool list, and " +
+  "output structure. For anything simpler (a single fact, a definition, a one-off " +
+  "calculation), skip skills and just use the tools directly.";
 
 export type AgentEvent =
   | { type: "text"; text: string }

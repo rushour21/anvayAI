@@ -10,6 +10,7 @@ import { incomeStatementTool } from "./income-statement";
 import { balanceSheetTool } from "./balance-sheet";
 import { cashFlowTool } from "./cash-flow";
 import { calculateMetricTool } from "./calculate-metric";
+import { listSkillsTool, loadSkillTool } from "./skills";
 import { peRatioTool } from "./ratio-pe";
 import { pbRatioTool } from "./ratio-pb";
 import { evEbitdaRatioTool } from "./ratio-ev-ebitda";
@@ -44,4 +45,7 @@ export const financialAgentTools = [
   searchFilingsTool,
   // Calculation
   calculateMetricTool,
+  // Skills
+  listSkillsTool,
+  loadSkillTool,
 ] as const;
