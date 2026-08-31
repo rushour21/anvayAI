@@ -12,9 +12,11 @@ import type { StopCondition } from "@openrouter/sdk/lib/tool-types.js";
    model — `model` always comes from lib/ai/model-router.ts's selectModel(),
    called by the route before this function. */
 
-const AGENT_SYSTEM_PROMPT =
+function buildAgentSystemPrompt(): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return (
   SYSTEM_PROMPT +
-  " You are a financial analyst assistant with tools to look up stock prices, company " +
+  ` Today's date is ${today}. You are a financial analyst assistant with tools to look up stock prices, company ` +
   "profiles, financial statements, run web searches, and perform exact financial " +
   "calculations. Use a tool whenever the user asks about a current price, a specific " +
   "company's figures, or a calculation — never invent numbers or dates. Always use " +
@@ -26,8 +28,8 @@ const AGENT_SYSTEM_PROMPT =
   "for that specific pair before writing it — never attach one pair's result to a different " +
   "year in your sentence. Every tool " +
   "you have is backed by real data (Financial Modeling Prep for prices/profiles/financials/" +
-  "statements/ratios, SEC EDGAR for filings, OpenRouter web search for search_web/" +
-  "search_news) — never call any of it \"mock\", \"illustrative\", or \"placeholder\". If a " +
+  "statements/ratios, SEC EDGAR for filings, Tavily for search_web/search_news) — never " +
+  "call any of it \"mock\", \"illustrative\", or \"placeholder\". If a " +
   "tool fails or has no data for what was asked, say that clearly instead of guessing — " +
   "never fill the gap with an invented number, filing, or source. You do not need a tool to " +
   "answer general definitional questions (e.g. \"what is a P/E ratio\"). Only call the " +
@@ -35,13 +37,22 @@ const AGENT_SYSTEM_PROMPT =
   "message. When a tool result includes a source (a filing, a search result, a named data " +
   "provider), cite it by name in your answer; if a fact has no source attached, don't " +
   "invent one. Clearly separate what the data says, what a calculation computed, and what " +
-  "is your own analysis — don't present your interpretation as a verified fact. For a " +
+  "is your own analysis — don't present your interpretation as a verified fact. search_web " +
+  "and search_news return raw results (title/url/content/publishedAt) with no summarization " +
+  `done for you — base your answer strictly on those results' actual content and dates, ` +
+  `never on your own training knowledge for anything time-sensitive, since your training ` +
+  `data has a fixed cutoff that may be a year or more out of date relative to ${today}. ` +
+  "Cite results by title, and never describe something as \"the latest\" if its " +
+  "publishedAt date is old or missing — if the results don't clearly answer the question, " +
+  "say so instead of filling the gap from memory. For a " +
   "request that matches a named research workflow — financial-analysis, equity-research, " +
   "valuation-analysis, or earnings-analysis (e.g. \"analyze X's revenue growth\", " +
   "\"research X\", \"valuation analysis of X\", \"how were X's earnings\") — call " +
   "load_skill with that name first and follow its recommended workflow, tool list, and " +
   "output structure. For anything simpler (a single fact, a definition, a one-off " +
-  "calculation), skip skills and just use the tools directly.";
+  "calculation), skip skills and just use the tools directly."
+  );
+}
 
 export type AgentEvent =
   | { type: "text"; text: string }
@@ -239,7 +250,7 @@ export async function* runFinancialAgent({
     const result = getClient().callModel({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),
-      instructions: AGENT_SYSTEM_PROMPT,
+      instructions: buildAgentSystemPrompt(),
       tools: tools as unknown as typeof financialAgentTools,
       stopWhen: [stepCountIs(MAX_STEPS), createDoomLoopStopCondition(() => (doomLoopFlag.tripped = true))],
     });
