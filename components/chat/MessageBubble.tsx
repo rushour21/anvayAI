@@ -7,6 +7,7 @@ import SourcesStrip from "./SourcesStrip";
 import MessageActions from "./MessageActions";
 import AssistantAvatar from "./AssistantAvatar";
 import MessageDocuments from "@/components/documents/MessageDocuments";
+import MarkdownContent from "./MarkdownContent";
 
 export default function MessageBubble({ message }: { message: Message }) {
   const [hovered, setHovered] = useState(false);
@@ -49,12 +50,7 @@ export default function MessageBubble({ message }: { message: Message }) {
           </div>
         )}
 
-        <div
-          className="text-[15px] leading-[1.72]"
-          style={{ color: "var(--ink-700)", whiteSpace: "pre-wrap" }}
-        >
-          {message.content}
-        </div>
+        <MarkdownContent content={message.content} />
 
         {message.sources && message.sources.length > 0 && (
           <SourcesStrip sources={message.sources} />
