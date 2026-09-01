@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { conversation, messages as messagesTable } from "@/db/schema";
+import { conversation, messages as messagesTable, documents as documentsTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
 
 export async function GET(
@@ -23,6 +23,11 @@ export async function GET(
     orderBy: asc(messagesTable.createdAt),
   });
 
+  const docs = await db.query.documents.findMany({
+    where: eq(documentsTable.conversationId, id),
+    orderBy: asc(documentsTable.createdAt),
+  });
+
   return NextResponse.json({
     id: convo.id,
     title: convo.title,
@@ -33,6 +38,14 @@ export async function GET(
       content: m.content,
       modelUsed: m.modelUsed,
       createdAt: m.createdAt.toISOString(),
+    })),
+    documents: docs.map((d) => ({
+      id: d.id,
+      filename: d.filename,
+      status: d.status,
+      pageCount: d.pageCount,
+      error: d.error,
+      createdAt: d.createdAt.toISOString(),
     })),
   });
 }

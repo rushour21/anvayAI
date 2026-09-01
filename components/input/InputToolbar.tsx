@@ -18,9 +18,11 @@ export default function InputToolbar() {
   const [modelOpen, setModelOpen] = useState(false);
   const attachRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef<HTMLDivElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
+  const uploadDocument = useChatStore((s) => s.uploadDocument);
 
   /* Close popups on outside click / escape */
   useEffect(() => {
@@ -88,7 +90,10 @@ export default function InputToolbar() {
                   key={opt.key}
                   type="button"
                   onClick={() => {
-                    /* TODO: wire each action */
+                    if (opt.key === "pdf") {
+                      pdfInputRef.current?.click();
+                    }
+                    /* TODO: wire the remaining actions */
                     setAttachOpen(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-colors duration-100 cursor-pointer"
@@ -107,6 +112,18 @@ export default function InputToolbar() {
             </div>
           </div>
         )}
+
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) uploadDocument(file);
+          }}
+        />
       </div>
 
       {/* ── Right: compact model selector ──────────────────────── */}

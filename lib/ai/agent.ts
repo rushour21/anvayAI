@@ -4,9 +4,10 @@ import { agentRuns, toolCalls as toolCallsTable } from "@/db/schema";
 import { getClient, SYSTEM_PROMPT, type ChatMessage } from "./openrouter";
 import { FALLBACK_MODEL } from "./models";
 import { financialAgentTools } from "./tools";
+import { createDocumentTools } from "./tools/documents";
 import { stepCountIs } from "@openrouter/sdk/lib/stop-conditions.js";
 import { isToolResultEvent } from "@openrouter/sdk/lib/tool-types.js";
-import type { StopCondition } from "@openrouter/sdk/lib/tool-types.js";
+import type { StopCondition, Tool } from "@openrouter/sdk/lib/tool-types.js";
 
 /* The financial-analyst agent (AGENTS.md Phase 3). Nothing here picks a
    model — `model` always comes from lib/ai/model-router.ts's selectModel(),
@@ -50,7 +51,11 @@ function buildAgentSystemPrompt(): string {
   "\"research X\", \"valuation analysis of X\", \"how were X's earnings\") — call " +
   "load_skill with that name first and follow its recommended workflow, tool list, and " +
   "output structure. For anything simpler (a single fact, a definition, a one-off " +
-  "calculation), skip skills and just use the tools directly."
+  "calculation), skip skills and just use the tools directly. If the user has uploaded " +
+  "documents to this conversation, use search_documents (then get_document_page for exact " +
+  "quotes) before answering questions that could be about them — cite results as 'Filename, " +
+  "Page N', never an invented page number, and clearly distinguish evidence from the " +
+  "uploaded document, external financial/market data, and external research from each other."
   );
 }
 
@@ -176,13 +181,17 @@ function createDoomLoopStopCondition(onTrip: () => void): StopCondition {
    touching the tool definitions in lib/ai/tools/*.ts. A thrown error is
    turned into a structured { ok: false, error } result instead of
    propagating, so the model can see and recover from it. */
-function instrumentTools(agentRunId: string) {
-  return financialAgentTools.map((t) => {
-    const original = t.function.execute as (input: unknown) => Promise<unknown> | unknown;
+function instrumentTools(agentRunId: string, tools: readonly Tool[]) {
+  return tools.map((t) => {
+    // The general Tool union includes ManualTool (no execute) — every tool
+    // this app actually registers is a ToolWithExecute, so this cast is
+    // safe by construction, same pattern the call site below already uses.
+    const fn = t.function as { name: string; execute: (input: unknown) => Promise<unknown> | unknown };
+    const original = fn.execute;
     return {
       ...t,
       function: {
-        ...t.function,
+        ...fn,
         execute: async (input: unknown) => {
           const start = Date.now();
           let output: unknown;
@@ -198,13 +207,13 @@ function instrumentTools(agentRunId: string) {
           }
           const durationMs = Date.now() - start;
           console.log(
-            `[agent] tool=${t.function.name} duration=${durationMs}ms status=${status}`
+            `[agent] tool=${fn.name} duration=${durationMs}ms status=${status}`
           );
           await db
             .insert(toolCallsTable)
             .values({
               agentRunId,
-              toolName: t.function.name,
+              toolName: fn.name,
               input: JSON.stringify(input),
               output: JSON.stringify(output),
               status,
@@ -251,7 +260,10 @@ export async function* runFinancialAgent({
     while (true) {
     const doomLoopFlag = { tripped: false };
 
-    const tools = instrumentTools(run.id);
+    const tools = instrumentTools(run.id, [
+      ...financialAgentTools,
+      ...createDocumentTools(conversationId),
+    ] as unknown as Tool[]);
     const result = getClient().callModel({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),

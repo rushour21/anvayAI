@@ -36,6 +36,13 @@
       "when": 1788115266210,
       "tag": "0004_cascade_delete_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788117905037,
+      "tag": "0005_documents_and_chunks",
+      "breakpoints": true
     }
   ]
 }

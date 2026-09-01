@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { Message, Chat } from "@/types/chat";
 import { AgentRole, TraceStep } from "@/types/agent";
 import { ModelMeta } from "@/types/llm";
+import { DocumentAttachment, DocumentStatus } from "@/types/document";
 import { DEFAULT_MODEL, MODELS } from "@/constants/models";
 import { EMPTY_STATE_AGENTS } from "@/constants/agents";
 
@@ -12,6 +13,9 @@ interface ChatState {
   messages: Message[];
   isStreaming: boolean;
   traceSteps: TraceStep[];
+
+  /* Documents attached to the current conversation */
+  documents: DocumentAttachment[];
 
   /* Agent pill toggles (empty state) */
   activeAgents: AgentRole[];
@@ -38,16 +42,72 @@ interface ChatState {
   deleteChat: (id: string) => Promise<void>;
   loadChatHistory: () => Promise<void>;
   loadConversation: (id: string) => Promise<void>;
+  uploadDocument: (file: File) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
 }
 
 /* Reference clock for "Today / Yesterday / Earlier" bucketing in the
    sidebar — approximates "now" without reading Date.now() during render. */
 export const SESSION_START = Date.now();
 
-export const useChatStore = create<ChatState>((set, get) => ({
+export const useChatStore = create<ChatState>((set, get) => {
+  /* Polls a just-uploaded document until it reaches "ready" or "error"
+     (processing can take up to ~90s per the API contract), updating the
+     matching entry in `documents` on each response. Capped at 40 attempts
+     (~100s at a 2.5s interval) so a stuck document doesn't poll forever. */
+  const pollDocument = (id: string, attempt = 0) => {
+    const MAX_ATTEMPTS = 40;
+    setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/documents/${id}`);
+        if (!res.ok) {
+          if (attempt < MAX_ATTEMPTS) pollDocument(id, attempt + 1);
+          return;
+        }
+        const data = (await res.json()) as {
+          id: string;
+          filename: string;
+          status: DocumentStatus;
+          pageCount?: number | null;
+          error?: string | null;
+          createdAt: string;
+        };
+        set((s) => ({
+          documents: s.documents.map((d) =>
+            d.id === id
+              ? {
+                  ...d,
+                  status: data.status,
+                  pageCount: data.pageCount ?? undefined,
+                  error: data.error ?? undefined,
+                }
+              : d
+          ),
+        }));
+        if (data.status === "uploaded" || data.status === "processing") {
+          if (attempt < MAX_ATTEMPTS) {
+            pollDocument(id, attempt + 1);
+          } else {
+            set((s) => ({
+              documents: s.documents.map((d) =>
+                d.id === id
+                  ? { ...d, status: "error", error: "Processing is taking longer than expected." }
+                  : d
+              ),
+            }));
+          }
+        }
+      } catch {
+        if (attempt < MAX_ATTEMPTS) pollDocument(id, attempt + 1);
+      }
+    }, 2500);
+  };
+
+  return {
   messages: [],
   isStreaming: false,
   traceSteps: [],
+  documents: [],
   activeAgents: [...EMPTY_STATE_AGENTS],
   selectedModel: DEFAULT_MODEL,
   chatHistory: [],
@@ -96,7 +156,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })),
   setSelectedModel: (model) => set({ selectedModel: model }),
   setActiveChatId: (id) => set({ activeChatId: id }),
-  clearMessages: () => set({ messages: [], traceSteps: [] }),
+  clearMessages: () => set({ messages: [], traceSteps: [], documents: [] }),
 
   loadChatHistory: async () => {
     const res = await fetch("/api/conversations");
@@ -119,12 +179,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   loadConversation: async (id) => {
-    set({ activeChatId: id, messages: [], traceSteps: [] });
+    set({ activeChatId: id, messages: [], traceSteps: [], documents: [] });
     const res = await fetch(`/api/conversations/${id}`);
     if (!res.ok) return;
     const data = (await res.json()) as {
       modelMode: string;
       messages: Array<{ id: string; role: "user" | "assistant"; content: string; createdAt: string }>;
+      documents?: Array<{
+        id: string;
+        filename: string;
+        status: DocumentStatus;
+        pageCount?: number | null;
+        error?: string | null;
+        createdAt: string;
+      }>;
     };
     const restoredModel = MODELS.find((m) => m.id === data.modelMode);
     set({
@@ -133,6 +201,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
         role: m.role,
         content: m.content,
         timestamp: new Date(m.createdAt).getTime(),
+      })),
+      documents: (data.documents ?? []).map((d) => ({
+        id: d.id,
+        filename: d.filename,
+        status: d.status,
+        pageCount: d.pageCount ?? undefined,
+        error: d.error ?? undefined,
+        createdAt: new Date(d.createdAt).getTime(),
       })),
       ...(restoredModel ? { selectedModel: restoredModel } : {}),
     });
@@ -143,7 +219,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({
       chatHistory: s.chatHistory.filter((c) => c.id !== id),
       ...(activeChatId === id
-        ? { activeChatId: null, messages: [], traceSteps: [] }
+        ? { activeChatId: null, messages: [], traceSteps: [], documents: [] }
         : {}),
     }));
     await fetch(`/api/conversations/${id}`, { method: "DELETE" }).catch(() => {});
@@ -264,4 +340,88 @@ export const useChatStore = create<ChatState>((set, get) => ({
       setIsStreaming(false);
     }
   },
-}));
+
+  uploadDocument: async (file) => {
+    const tempId = crypto.randomUUID();
+    set((s) => ({
+      documents: [
+        ...s.documents,
+        { id: tempId, filename: file.name, status: "uploading" as const, createdAt: Date.now() },
+      ],
+    }));
+
+    try {
+      let chatId = get().activeChatId;
+
+      if (!chatId) {
+        const title = file.name.length > 60 ? `${file.name.slice(0, 60)}…` : file.name;
+        const createRes = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, modelMode: get().selectedModel.id }),
+        });
+        if (!createRes.ok) throw new Error("Failed to create conversation");
+        const created = (await createRes.json()) as { id: string; title: string };
+        chatId = created.id;
+
+        const now = Date.now();
+        set((s) => ({
+          activeChatId: chatId,
+          chatHistory: [
+            { id: chatId!, title: created.title, messages: [], createdAt: now, updatedAt: now },
+            ...s.chatHistory,
+          ],
+        }));
+        window.history.replaceState(null, "", `/chat/${chatId}`);
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversationId", chatId);
+
+      const res = await fetch("/api/documents", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}) as Record<string, unknown>);
+
+      if (!res.ok) {
+        const message =
+          typeof data.error === "string" ? data.error : "Upload failed. Please try again.";
+        set((s) => ({
+          documents: s.documents.map((d) =>
+            d.id === tempId ? { ...d, status: "error" as const, error: message } : d
+          ),
+        }));
+        return;
+      }
+
+      const uploaded = data as { id: string; filename: string; status: DocumentStatus; createdAt: string };
+      set((s) => ({
+        documents: s.documents.map((d) =>
+          d.id === tempId
+            ? {
+                id: uploaded.id,
+                filename: uploaded.filename,
+                status: uploaded.status,
+                createdAt: new Date(uploaded.createdAt).getTime(),
+              }
+            : d
+        ),
+      }));
+
+      pollDocument(uploaded.id);
+    } catch {
+      set((s) => ({
+        documents: s.documents.map((d) =>
+          d.id === tempId
+            ? { ...d, status: "error" as const, error: "Upload failed. Please try again." }
+            : d
+        ),
+      }));
+    }
+  },
+
+  deleteDocument: async (id) => {
+    set((s) => ({ documents: s.documents.filter((d) => d.id !== id) }));
+    await fetch(`/api/documents/${id}`, { method: "DELETE" }).catch(() => {});
+  },
+  };
+});
