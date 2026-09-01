@@ -6,7 +6,7 @@ import { FALLBACK_MODEL } from "./models";
 import { financialAgentTools } from "./tools";
 import { createDocumentTools } from "./tools/documents";
 import { stepCountIs } from "@openrouter/sdk/lib/stop-conditions.js";
-import { isToolResultEvent } from "@openrouter/sdk/lib/tool-types.js";
+import { isToolResultEvent, isTurnStartEvent } from "@openrouter/sdk/lib/tool-types.js";
 import type { StopCondition, Tool } from "@openrouter/sdk/lib/tool-types.js";
 
 /* The financial-analyst agent (AGENTS.md Phase 3). Nothing here picks a
@@ -17,6 +17,10 @@ function buildAgentSystemPrompt(readyDocumentFilenames: string[]): string {
   const today = new Date().toISOString().slice(0, 10);
   return (
   SYSTEM_PROMPT +
+  " Never narrate your plan before using a tool (e.g. \"I'll check the resume first\", " +
+  "\"Let me search for that\") — call the tool silently and give your actual answer once " +
+  "you have what you need. Only the text of your final answer is shown to the user; " +
+  "anything you write before a tool call is discarded, so writing it wastes effort." +
   ` Today's date is ${today}. You are a financial analyst assistant with tools to look up stock prices, company ` +
   "profiles, financial statements, run web searches, and perform exact financial " +
   "calculations. Use a tool whenever the user asks about a current price, a specific " +
@@ -299,13 +303,6 @@ export async function* runFinancialAgent({
     const queue = new EventQueue<AgentEvent>();
     const toolNameByCallId = new Map<string, string>();
 
-    const textLoop = (async () => {
-      for await (const delta of result.getTextStream()) {
-        sawText = true;
-        queue.push({ type: "text", text: delta });
-      }
-    })();
-
     const toolStartLoop = (async () => {
       for await (const call of result.getToolCallsStream()) {
         toolNameByCallId.set(call.id, call.name);
@@ -313,15 +310,39 @@ export async function* runFinancialAgent({
       }
     })();
 
-    const toolCompleteLoop = (async () => {
+    // Merges text + tool_complete detection into one pass over
+    // getFullResponsesStream(), tracking turn boundaries. A multi-step
+    // tool-calling run has one "turn" per model generation — some turns
+    // are just narration before a tool call ("I'll review the resume
+    // first...", "Let me search..."), which must never reach the user
+    // (this app's own invariant, and a real bug hit in production where
+    // that narration leaked straight into the visible answer). Text is
+    // buffered per turn and discarded the moment a new turn starts,
+    // proving the previous one wasn't final — only the text belonging to
+    // the turn the stream actually ends on (nothing followed it) is ever
+    // pushed to the user.
+    const responseLoop = (async () => {
+      let turnBuffer = "";
       for await (const event of result.getFullResponsesStream()) {
+        if (isTurnStartEvent(event)) {
+          turnBuffer = "";
+          continue;
+        }
+        if ((event as { type?: string }).type === "response.output_text.delta") {
+          turnBuffer += (event as { delta: string }).delta;
+          continue;
+        }
         if (isToolResultEvent(event)) {
           queue.push({ type: "tool_complete", tool: toolNameByCallId.get(event.toolCallId) ?? "tool" });
         }
       }
+      if (turnBuffer) {
+        sawText = true;
+        queue.push({ type: "text", text: turnBuffer });
+      }
     })();
 
-    Promise.all([textLoop, toolStartLoop, toolCompleteLoop]).then(
+    Promise.all([toolStartLoop, responseLoop]).then(
       () => queue.end(),
       (err) => queue.end(err)
     );
