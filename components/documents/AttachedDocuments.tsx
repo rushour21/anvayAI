@@ -7,11 +7,16 @@ import DocumentChip from "./DocumentChip";
     composer (see InputCard.tsx). Renders nothing when there are none, so it
     never adds visual weight to a plain conversation. */
 export default function AttachedDocuments() {
+  // Selecting the raw array (stable reference) and filtering outside the
+  // selector — filtering inside a Zustand selector returns a new array
+  // every render, which breaks its snapshot comparison and causes an
+  // infinite re-render loop ("Maximum update depth exceeded", hit live).
+  const allDocuments = useChatStore((s) => s.documents);
+  const deleteDocument = useChatStore((s) => s.deleteDocument);
   // Only pending uploads (not yet tied to a sent message) belong here —
   // once a message ties them via messageId, MessageDocuments renders them
   // in chat history instead.
-  const documents = useChatStore((s) => s.documents.filter((d) => !d.messageId));
-  const deleteDocument = useChatStore((s) => s.deleteDocument);
+  const documents = allDocuments.filter((d) => !d.messageId);
 
   if (documents.length === 0) return null;
 
