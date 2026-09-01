@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { agentRuns, toolCalls as toolCallsTable } from "@/db/schema";
+import { agentRuns, toolCalls as toolCallsTable, documents as documentsTable } from "@/db/schema";
 import { getClient, SYSTEM_PROMPT, type ChatMessage } from "./openrouter";
 import { FALLBACK_MODEL } from "./models";
 import { financialAgentTools } from "./tools";
@@ -13,7 +13,7 @@ import type { StopCondition, Tool } from "@openrouter/sdk/lib/tool-types.js";
    model — `model` always comes from lib/ai/model-router.ts's selectModel(),
    called by the route before this function. */
 
-function buildAgentSystemPrompt(): string {
+function buildAgentSystemPrompt(readyDocumentFilenames: string[]): string {
   const today = new Date().toISOString().slice(0, 10);
   return (
   SYSTEM_PROMPT +
@@ -51,11 +51,19 @@ function buildAgentSystemPrompt(): string {
   "\"research X\", \"valuation analysis of X\", \"how were X's earnings\") — call " +
   "load_skill with that name first and follow its recommended workflow, tool list, and " +
   "output structure. For anything simpler (a single fact, a definition, a one-off " +
-  "calculation), skip skills and just use the tools directly. If the user has uploaded " +
-  "documents to this conversation, use search_documents (then get_document_page for exact " +
-  "quotes) before answering questions that could be about them — cite results as 'Filename, " +
-  "Page N', never an invented page number, and clearly distinguish evidence from the " +
-  "uploaded document, external financial/market data, and external research from each other."
+  "calculation), skip skills and just use the tools directly." +
+  (readyDocumentFilenames.length > 0
+    ? " The user has already uploaded and this conversation currently has ready to search: " +
+      readyDocumentFilenames.map((f) => `"${f}"`).join(", ") +
+      ". For ANY question that could plausibly be about a document — including vague ones " +
+      "like \"explain this\", \"summarize this\", \"what is this about\" — call " +
+      "search_documents FIRST before answering. Never claim no document is attached; one is. " +
+      "If search_documents finds nothing relevant to the specific question, say that " +
+      "clearly instead of guessing — but always try the search first. Cite results as " +
+      "'Filename, Page N', never an invented page number, and clearly distinguish evidence " +
+      "from the uploaded document, external financial/market data, and external research " +
+      "from each other."
+    : "")
   );
 }
 
@@ -245,6 +253,15 @@ export async function* runFinancialAgent({
 }): AsyncGenerator<AgentEvent, { modelUsed: string }, undefined> {
   const [run] = await db.insert(agentRuns).values({ conversationId, model, status: "running" }).returning();
 
+  // Computed once per run, not per candidate — the model has no other way
+  // to know a document is attached, and a weaker/free model won't reliably
+  // infer that from vague phrasing ("explain this pdf") and call the tool
+  // to check on its own.
+  const readyDocs = await db.query.documents.findMany({
+    where: and(eq(documentsTable.conversationId, conversationId), eq(documentsTable.status, "ready")),
+  });
+  const readyDocumentFilenames = readyDocs.map((d) => d.filename);
+
   const candidates = model === FALLBACK_MODEL ? [model] : [model, FALLBACK_MODEL];
   let lastError: unknown = null;
 
@@ -267,7 +284,7 @@ export async function* runFinancialAgent({
     const result = getClient().callModel({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),
-      instructions: buildAgentSystemPrompt(),
+      instructions: buildAgentSystemPrompt(readyDocumentFilenames),
       // Left unset, this defaults to 16384 — comfortably more than a
       // financial analysis answer needs, and the exact number behind the
       // recurring "requested up to 16384 tokens, but can only afford ..."
