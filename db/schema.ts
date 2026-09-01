@@ -70,6 +70,11 @@ export const documents = pgTable("documents", {
   id: uuid("id").primaryKey().defaultRandom(),
   conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "cascade" }).notNull(),
   userId: uuid("user_id").references(() => users.id).notNull(),
+  /* Null while "pending" (uploaded but no message sent yet — still shown in
+     the composer). Set to the user message's id once that message is sent,
+     so the frontend can render the document's chip in chat history at that
+     point instead of persisting it in the composer forever. */
+  messageId: uuid("message_id").references(() => messages.id, { onDelete: "set null" }),
   filename: text("filename").notNull(),
   storageKey: text("storage_key").notNull(),
   pageCount: integer("page_count"),
