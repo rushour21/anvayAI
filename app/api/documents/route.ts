@@ -12,7 +12,7 @@ import { processDocument } from "@/lib/documents/process";
    large PDF (LlamaParse's own poll timeout) — well past Vercel's default
    10s. Runs inside after() below so the upload response returns fast while
    processing continues; after() itself is bounded by this maxDuration. */
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20MB
 
