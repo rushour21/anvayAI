@@ -7,7 +7,11 @@ import type { ChatMessage } from "@/lib/ai/openrouter";
 import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
 import { selectModel } from "@/lib/ai/model-router";
 import { isModelMode } from "@/lib/ai/models";
-import { OpenRouterError, PaymentRequiredResponseError } from "@openrouter/sdk/models/errors";
+import {
+  OpenRouterError,
+  PaymentRequiredResponseError,
+  TooManyRequestsResponseError,
+} from "@openrouter/sdk/models/errors";
 
 /* Vercel's default function timeout (10s) was silently killing agent runs
    mid-stream whenever a tool call took longer than that — e.g. search_news/
@@ -24,10 +28,16 @@ function statusForUpstreamError(code: number): number {
 
 // Retrying never helps a 402 — it's an account balance issue, not a
 // transient failure — so it gets a distinct, actionable message instead of
-// the generic fallback.
+// the generic fallback. A 429 is genuinely transient, but an immediate
+// retry tends to compound it (all candidate models rate-limited in the
+// same burst, seen in production) — tell the user to wait instead of
+// implying "try again" will help right away.
 function userMessageForError(err: unknown): string {
   if (err instanceof PaymentRequiredResponseError) {
     return "Your OpenRouter account doesn't have enough credits for this request. Add credits at openrouter.ai and try again.";
+  }
+  if (err instanceof TooManyRequestsResponseError) {
+    return "This model is temporarily rate-limited. Wait about 30 seconds before trying again — retrying immediately tends to hit the same limit.";
   }
   return "Something went wrong. Please try again.";
 }
