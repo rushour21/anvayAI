@@ -129,4 +129,6 @@ export const TOOL_DISPLAY: Record<string, { label: string; icon: IconName; color
   // Documents
   search_documents: { label: "Searching your documents", icon: "document", color: "var(--agent-rag)" },
   get_document_page: { label: "Reading document page", icon: "document", color: "var(--agent-rag)" },
+  // Memory
+  remember_fact: { label: "Saving to memory", icon: "brain", color: "var(--agent-memory)" },
 };

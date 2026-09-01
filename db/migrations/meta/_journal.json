@@ -50,6 +50,13 @@
       "when": 1788270947552,
       "tag": "0006_documents_message_id",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788291825324,
+      "tag": "0007_phase7_8_security_and_memory",
+      "breakpoints": true
     }
   ]
 }
