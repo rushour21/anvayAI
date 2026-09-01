@@ -60,3 +60,31 @@ export const toolCalls = pgTable("tool_calls", {
   durationMs: integer("duration_ms").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const documentStatus = pgEnum("document_status", ["uploaded", "processing", "ready", "error"]);
+
+/* Phase 6 document intelligence (AGENTS.md Phase 6 §6.1-6.2) — original file
+   in Supabase Storage (storageKey), chunk text+metadata here for citations,
+   embeddings live in Qdrant (documentChunks.qdrantPointId links them). */
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "cascade" }).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  filename: text("filename").notNull(),
+  storageKey: text("storage_key").notNull(),
+  pageCount: integer("page_count"),
+  status: documentStatus("status").notNull().default("uploaded"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const documentChunks = pgTable("document_chunks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  documentId: uuid("document_id").references(() => documents.id, { onDelete: "cascade" }).notNull(),
+  page: integer("page").notNull(),
+  chunkIndex: integer("chunk_index").notNull(),
+  text: text("text").notNull(),
+  qdrantPointId: text("qdrant_point_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

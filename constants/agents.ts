@@ -126,4 +126,7 @@ export const TOOL_DISPLAY: Record<string, { label: string; icon: IconName; color
   // Skills
   list_skills: { label: "Checking available workflows", icon: "layers", color: "var(--agent-gateway)" },
   load_skill: { label: "Loading research workflow", icon: "layers", color: "var(--agent-gateway)" },
+  // Documents
+  search_documents: { label: "Searching your documents", icon: "document", color: "var(--agent-rag)" },
+  get_document_page: { label: "Reading document page", icon: "document", color: "var(--agent-rag)" },
 };

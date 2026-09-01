@@ -2,10 +2,12 @@
 
 import QueryInput from "./QueryInput";
 import InputToolbar from "./InputToolbar";
+import AttachedDocuments from "@/components/documents/AttachedDocuments";
 
 export default function InputCard() {
   return (
     <div className="shrink-0 px-4 sm:px-8 pb-5 pt-2">
+      <AttachedDocuments />
       <form
         onSubmit={(e) => e.preventDefault()}
         className="mx-auto px-3.5 pt-2.5 pb-2"
