@@ -7,8 +7,11 @@ import DocumentChip from "./DocumentChip";
     message's bubble once it's been sent (see MessageBubble.tsx). Before
     that, the same document shows in AttachedDocuments (the composer). */
 export default function MessageDocuments({ messageId }: { messageId: string }) {
-  const documents = useChatStore((s) => s.documents.filter((d) => d.messageId === messageId));
+  // Same fix as AttachedDocuments.tsx — select the raw array, filter
+  // outside the selector, never inside it.
+  const allDocuments = useChatStore((s) => s.documents);
   const deleteDocument = useChatStore((s) => s.deleteDocument);
+  const documents = allDocuments.filter((d) => d.messageId === messageId);
 
   if (documents.length === 0) return null;
 
