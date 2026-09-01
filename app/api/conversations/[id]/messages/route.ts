@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { conversation, messages as messagesTable } from "@/db/schema";
+import { conversation, messages as messagesTable, documents as documentsTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
 import type { ChatMessage } from "@/lib/ai/openrouter";
 import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
@@ -63,7 +63,23 @@ export async function POST(
   }
 
   // Save the user message before calling the model (AGENTS.md Phase 1 §7).
-  await db.insert(messagesTable).values({ conversationId: id, role: "user", content });
+  // A client-supplied id (if a well-formed uuid) is used as-is so the
+  // frontend's optimistic message and the persisted row share one id —
+  // needed to tie any pending document uploads to this exact message.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const clientMessageId = typeof body?.id === "string" && UUID_RE.test(body.id) ? body.id : undefined;
+  const [userMessage] = await db
+    .insert(messagesTable)
+    .values({ ...(clientMessageId ? { id: clientMessageId } : {}), conversationId: id, role: "user", content })
+    .returning();
+
+  // Tie any documents uploaded but not yet attached to a message (chip
+  // still shown in the composer) to this one, so the frontend can render
+  // them in chat history above this message instead.
+  await db
+    .update(documentsTable)
+    .set({ messageId: userMessage.id })
+    .where(and(eq(documentsTable.conversationId, id), isNull(documentsTable.messageId)));
 
   const history = await db.query.messages.findMany({
     where: eq(messagesTable.conversationId, id),

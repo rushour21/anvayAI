@@ -191,6 +191,7 @@ export const useChatStore = create<ChatState>((set, get) => {
         status: DocumentStatus;
         pageCount?: number | null;
         error?: string | null;
+        messageId?: string | null;
         createdAt: string;
       }>;
     };
@@ -208,6 +209,7 @@ export const useChatStore = create<ChatState>((set, get) => {
         status: d.status,
         pageCount: d.pageCount ?? undefined,
         error: d.error ?? undefined,
+        messageId: d.messageId ?? undefined,
         createdAt: new Date(d.createdAt).getTime(),
       })),
       ...(restoredModel ? { selectedModel: restoredModel } : {}),
@@ -235,6 +237,12 @@ export const useChatStore = create<ChatState>((set, get) => {
       timestamp: Date.now(),
     };
     addMessage(userMsg);
+    // Tie any pending (composer-shown) documents to this message right away
+    // — matches what the server does with the same id, so the chip moves
+    // into chat history immediately instead of waiting for a round trip.
+    set((s) => ({
+      documents: s.documents.map((d) => (d.messageId ? d : { ...d, messageId: userMsg.id })),
+    }));
     setIsStreaming(true);
 
     try {
@@ -267,7 +275,10 @@ export const useChatStore = create<ChatState>((set, get) => {
       const res = await fetch(`/api/conversations/${chatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, mode: selectedModel.id }),
+        // userMsg.id is reused as the persisted row's id server-side, so any
+        // pending document uploads get tied to the exact same id we already
+        // rendered locally — no extra round trip needed to reconcile them.
+        body: JSON.stringify({ content, mode: selectedModel.id, id: userMsg.id }),
       });
 
       if (!res.ok || !res.body) {

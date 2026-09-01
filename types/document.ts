@@ -13,5 +13,9 @@ export interface DocumentAttachment {
   status: ClientDocumentStatus;
   pageCount?: number;
   error?: string;
+  /** Null/undefined while pending (shown in the composer). Set once the
+      document has been tied to the message it was attached to — the chip
+      then renders in chat history above that message instead. */
+  messageId?: string | null;
   createdAt: number;
 }

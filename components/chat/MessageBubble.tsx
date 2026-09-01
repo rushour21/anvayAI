@@ -6,6 +6,7 @@ import AgentTrace from "./AgentTrace";
 import SourcesStrip from "./SourcesStrip";
 import MessageActions from "./MessageActions";
 import AssistantAvatar from "./AssistantAvatar";
+import MessageDocuments from "@/components/documents/MessageDocuments";
 
 export default function MessageBubble({ message }: { message: Message }) {
   const [hovered, setHovered] = useState(false);
@@ -15,7 +16,8 @@ export default function MessageBubble({ message }: { message: Message }) {
      width as a document, which is what long cited answers need. */
   if (isUser) {
     return (
-      <div className="flex justify-end animate-fade-up">
+      <div className="flex flex-col items-end gap-1.5 animate-fade-up">
+        <MessageDocuments messageId={message.id} />
         <div
           className="px-4 py-2.5 text-[14.5px] leading-relaxed"
           style={{

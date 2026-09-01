@@ -7,7 +7,10 @@ import DocumentChip from "./DocumentChip";
     composer (see InputCard.tsx). Renders nothing when there are none, so it
     never adds visual weight to a plain conversation. */
 export default function AttachedDocuments() {
-  const documents = useChatStore((s) => s.documents);
+  // Only pending uploads (not yet tied to a sent message) belong here —
+  // once a message ties them via messageId, MessageDocuments renders them
+  // in chat history instead.
+  const documents = useChatStore((s) => s.documents.filter((d) => !d.messageId));
   const deleteDocument = useChatStore((s) => s.deleteDocument);
 
   if (documents.length === 0) return null;

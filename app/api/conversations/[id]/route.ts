@@ -45,6 +45,7 @@ export async function GET(
       status: d.status,
       pageCount: d.pageCount,
       error: d.error,
+      messageId: d.messageId,
       createdAt: d.createdAt.toISOString(),
     })),
   });
