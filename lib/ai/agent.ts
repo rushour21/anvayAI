@@ -72,6 +72,11 @@ const MAX_STEPS = 8;
 const FIRST_EVENT_TIMEOUT_MS = 15000;
 const NO_FALLBACK_TIMEOUT_MS = 50000;
 
+/* Plenty for a financial analysis answer with citations (typically a few
+   hundred to ~1500 tokens); see the maxOutputTokens comment below for why
+   this exists. */
+const MAX_OUTPUT_TOKENS = 4096;
+
 /* Production-only (never seen locally) transient failure from inside
    @openrouter/sdk's own response-parsing on a follow-up turn after a tool
    call — most likely a stale/corrupted keep-alive connection reused in
@@ -251,6 +256,13 @@ export async function* runFinancialAgent({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),
       instructions: buildAgentSystemPrompt(),
+      // Left unset, this defaults to 16384 — comfortably more than a
+      // financial analysis answer needs, and the exact number behind the
+      // recurring "requested up to 16384 tokens, but can only afford ..."
+      // PaymentRequiredResponseError seen in production regardless of
+      // account balance/credit-limit settings. Capped well below what's
+      // actually needed so that error class stops recurring outright.
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
       tools: tools as unknown as typeof financialAgentTools,
       stopWhen: [stepCountIs(MAX_STEPS), createDoomLoopStopCondition(() => (doomLoopFlag.tripped = true))],
     });
