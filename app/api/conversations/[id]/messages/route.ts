@@ -3,8 +3,11 @@ import { eq, asc, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { conversation, messages as messagesTable, documents as documentsTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
-import type { ChatMessage } from "@/lib/ai/openrouter";
 import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
+import { rateLimit, clientIp, RULES } from "@/lib/security/rate-limit";
+import { checkBudget, microsToUsd } from "@/lib/billing/usage";
+import { buildConversationContext } from "@/lib/memory/summarize";
+import { recallRelevant } from "@/lib/memory/user-memory";
 import { selectModel } from "@/lib/ai/model-router";
 import { isModelMode } from "@/lib/ai/models";
 import {
@@ -62,6 +65,39 @@ export async function POST(
     return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
   }
 
+  /* Phase 7 preflight. Rate limit first (cheapest check, and the one that
+     stops retry storms compounding provider limits), then the spend
+     ceiling — both before anything expensive starts. */
+  const perUser = await rateLimit(`user:${userId}:messages`, RULES.messages);
+  if (!perUser.allowed) {
+    return NextResponse.json(
+      { error: `You're sending messages too quickly. Try again in ${perUser.retryAfterSeconds}s.` },
+      { status: 429, headers: { "Retry-After": String(perUser.retryAfterSeconds) } }
+    );
+  }
+  const perIp = await rateLimit(`ip:${clientIp(req)}:messages`, {
+    limit: RULES.messages.limit * 3,
+    windowSeconds: RULES.messages.windowSeconds,
+  });
+  if (!perIp.allowed) {
+    return NextResponse.json(
+      { error: `Too many requests from this network. Try again in ${perIp.retryAfterSeconds}s.` },
+      { status: 429, headers: { "Retry-After": String(perIp.retryAfterSeconds) } }
+    );
+  }
+
+  const budget = await checkBudget(userId);
+  if (!budget.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          `You've reached this month's usage limit of $${microsToUsd(budget.limitMicros).toFixed(2)}. ` +
+          `It resets at the start of next month.`,
+      },
+      { status: 402 }
+    );
+  }
+
   // Save the user message before calling the model (AGENTS.md Phase 1 §7).
   // A client-supplied id (if a well-formed uuid) is used as-is so the
   // frontend's optimistic message and the persisted row share one id —
@@ -81,15 +117,14 @@ export async function POST(
     .set({ messageId: userMessage.id })
     .where(and(eq(documentsTable.conversationId, id), isNull(documentsTable.messageId)));
 
-  const history = await db.query.messages.findMany({
-    where: eq(messagesTable.conversationId, id),
-    orderBy: asc(messagesTable.createdAt),
-  });
-
-  const chatMessages: ChatMessage[] = history.map((m) => ({
-    role: m.role === "assistant" ? "assistant" : "user",
-    content: m.content,
-  }));
+  /* Phase 8 — instead of resending the whole history every turn, older
+     turns are compacted into a rolling summary and only recent ones go
+     verbatim. Memory recall runs alongside it (both hit the network, and
+     neither depends on the other). */
+  const [context, recalledMemories] = await Promise.all([
+    buildConversationContext(id),
+    recallRelevant(userId, content),
+  ]);
 
   // Per-message override (AGENTS.md Phase 2 §8) — falls back to the
   // conversation's stored mode, and never gets written back onto it.
@@ -99,8 +134,10 @@ export async function POST(
   const generator = runFinancialAgent({
     conversationId: id,
     userId,
-    messages: chatMessages,
+    messages: context.messages,
     model: primaryModel,
+    conversationSummary: context.summary,
+    recalledMemories,
   });
 
   // Drive the first event before responding, so a failure on every candidate

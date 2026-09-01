@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, pgEnum, integer, boolean, index } from "drizzle-orm/pg-core";
 
 /* Matches lib/auth/types.ts's PlanTier — kept in sync by hand for now.
    Adding "team" / "enterprise" later (docs/PRD.md §9) is a value added
@@ -23,6 +23,13 @@ export const conversation = pgTable("conversations", {
   title: text("title").notNull(),
   userId: uuid("user_id").references(() => users.id).notNull(),
   modelMode: modelMode("model_mode").notNull().default("auto"),
+  /* Phase 8 rolling summary — replaces the older half of a long
+     conversation so each turn stops resending the entire history.
+     `summarizedThrough` marks how far the summary covers; messages newer
+     than it are still sent verbatim. A timestamp rather than a message FK
+     so deleting a message can't silently orphan the marker. */
+  summary: text("summary"),
+  summarizedThrough: timestamp("summarized_through", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
@@ -93,3 +100,50 @@ export const documentChunks = pgTable("document_chunks", {
   qdrantPointId: text("qdrant_point_id").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* Phase 7 cost accounting — OpenRouter returns real usage and cost on
+   every run (lib/ai/agent.ts already receives it); this persists it so
+   month-to-date spend is queryable and enforceable per user. Indexed on
+   (userId, createdAt) because the only hot query is "this user's spend
+   since the start of the month". */
+export const usageLedger = pgTable(
+  "usage_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    agentRunId: uuid("agent_run_id").references(() => agentRuns.id, { onDelete: "set null" }),
+    model: text("model").notNull(),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    /* Micro-dollars (USD * 1_000_000) as an integer — summing thousands of
+       tiny per-run float costs drifts; integer micros don't. */
+    costMicros: integer("cost_micros").notNull().default(0),
+    isByok: boolean("is_byok").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("usage_ledger_user_created_idx").on(t.userId, t.createdAt)]
+);
+
+/* Phase 7 fixed-window rate limiting, Postgres-backed (no new service).
+   One row per limiter key ("user:<id>:messages", "ip:<addr>:documents");
+   the count resets when a request arrives in a newer window. */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+});
+
+/* Phase 8 user memory — durable facts/preferences that outlive a single
+   conversation. Deliberately small and reviewable; the embedding for
+   relevance-filtered retrieval lives in Qdrant, linked by qdrantPointId. */
+export const userMemories = pgTable(
+  "user_memories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    content: text("content").notNull(),
+    qdrantPointId: text("qdrant_point_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("user_memories_user_idx").on(t.userId)]
+);
