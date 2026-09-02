@@ -25,7 +25,9 @@ export default function DocumentChip({
   onDelete,
 }: {
   document: DocumentAttachment;
-  onDelete: () => void;
+  /** Omitted once the document has been sent with a message — a sent
+      attachment is part of the conversation record and can't be removed. */
+  onDelete?: () => void;
 }) {
   const isError = document.status === "error";
   const isPending =
@@ -88,6 +90,7 @@ export default function DocumentChip({
         {isError && <Icon name="close" size={12} strokeWidth={2} style={{ color: "var(--red-500, #ef4444)" }} />}
       </span>
 
+      {onDelete && (
       <button
         type="button"
         onClick={onDelete}
@@ -106,6 +109,7 @@ export default function DocumentChip({
       >
         <Icon name="close" size={11} strokeWidth={2} />
       </button>
+      )}
     </div>
   );
 }

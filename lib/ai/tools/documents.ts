@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { tool } from "@openrouter/sdk/lib/tool.js";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { documents as documentsTable, documentChunks } from "@/db/schema";
 import { embedTexts } from "@/lib/documents/providers/embeddings";
@@ -10,29 +10,71 @@ import { searchChunks } from "@/lib/documents/providers/vectorstore";
    argument) — the model can search documents but can never pass a
    different conversation's ID and read someone else's files. Created
    fresh per agent run in lib/ai/agent.ts, not registered as a static tool
-   in lib/ai/tools/index.ts like the rest. */
-export function createDocumentTools(conversationId: string) {
+   in lib/ai/tools/index.ts like the rest.
+
+   `attachedDocumentIds` are the ready documents attached to the message
+   being answered right now. They are the default search scope: when a user
+   uploads a second PDF and asks about it, an unscoped conversation-wide
+   search will happily return chunks from the first PDF and answer about the
+   wrong file. Older documents stay reachable through scope: "all", for
+   genuine follow-ups ("compare this with the report I sent earlier"). */
+export function createDocumentTools(conversationId: string, attachedDocumentIds: string[] = []) {
+  const hasAttached = attachedDocumentIds.length > 0;
+
   const searchDocumentsTool = tool({
     name: "search_documents",
     description:
-      "Searches the documents the user has uploaded to THIS conversation for passages " +
-      "relevant to a query. Input: { query }. Returns up to 5 results, each " +
-      "{ documentId, filename, page, text }. Cite results as 'Filename, Page N' — never " +
-      "invent a page number. If nothing relevant is found (or nothing has been uploaded), " +
-      "say so instead of guessing.",
-    inputSchema: z.object({ query: z.string().describe("What to search for in the uploaded documents") }),
-    execute: async ({ query }) => {
+      "Searches the documents the user uploaded to THIS conversation for passages relevant " +
+      "to a query. Input: { query, scope? }. " +
+      (hasAttached
+        ? 'scope defaults to "attached" — the document(s) the user attached to the message ' +
+          "you are answering right now, which is what they mean by \"this document\", " +
+          '"the pdf", or "summarize this". Pass scope "all" ONLY when the user explicitly ' +
+          "refers to something they uploaded earlier, or asks you to compare across " +
+          "documents. "
+        : "scope is ignored — nothing is attached to the current message, so all documents " +
+          "in this conversation are searched. ") +
+      "Returns up to 5 results, each { documentId, filename, page, text }. Cite results as " +
+      "'Filename, Page N' — never invent a page number. If nothing relevant is found, say " +
+      "so instead of guessing.",
+    inputSchema: z.object({
+      query: z.string().describe("What to search for in the uploaded documents"),
+      scope: z
+        .enum(["attached", "all"])
+        .optional()
+        .describe(
+          '"attached" (default) searches only the document(s) attached to the current ' +
+            'message; "all" searches every document in this conversation.'
+        ),
+    }),
+    execute: async ({ query, scope }) => {
       try {
+        /* Default to the attached documents whenever there are any. An
+           explicit "all" is the only way to widen it, so a vague question
+           can never drift onto an older upload by accident. */
+        const searchAttachedOnly = hasAttached && scope !== "all";
         const [vector] = await embedTexts([query]);
-        const results = await searchChunks(vector, conversationId, 5);
+        const results = await searchChunks(
+          vector,
+          conversationId,
+          5,
+          searchAttachedOnly ? attachedDocumentIds : undefined
+        );
         if (results.length === 0) {
-          return { ok: false as const, error: "No uploaded documents found relevant to this query." };
+          return {
+            ok: false as const,
+            error: searchAttachedOnly
+              ? "Nothing relevant found in the document(s) attached to this message. Do not " +
+                "answer from a different document — say the attached document doesn't cover it."
+              : "No uploaded documents found relevant to this query.",
+          };
         }
         const docIds = [...new Set(results.map((r) => r.payload.documentId))];
         const docs = await db.query.documents.findMany({ where: inArray(documentsTable.id, docIds) });
         const filenameById = new Map(docs.map((d) => [d.id, d.filename]));
         return {
           ok: true as const,
+          scope: searchAttachedOnly ? ("attached" as const) : ("all" as const),
           results: results.map((r) => ({
             documentId: r.payload.documentId,
             filename: filenameById.get(r.payload.documentId) ?? "document",
@@ -42,6 +84,38 @@ export function createDocumentTools(conversationId: string) {
         };
       } catch (err) {
         return { ok: false as const, error: err instanceof Error ? err.message : "Document search failed." };
+      }
+    },
+  });
+
+  /* Lets the model resolve "the pdf" when several exist, and see that a
+     document is still processing rather than assuming it isn't there. */
+  const listDocumentsTool = tool({
+    name: "list_documents",
+    description:
+      "Lists every document uploaded to this conversation: { filename, status, pageCount, " +
+      "attachedToCurrentMessage }. Use it when the user refers to a document ambiguously " +
+      "and more than one exists, or to check whether a document is ready to search. " +
+      "A document whose status is not 'ready' cannot be searched yet.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      try {
+        const docs = await db.query.documents.findMany({
+          where: eq(documentsTable.conversationId, conversationId),
+          orderBy: asc(documentsTable.createdAt),
+        });
+        return {
+          ok: true as const,
+          documents: docs.map((d) => ({
+            documentId: d.id,
+            filename: d.filename,
+            status: d.status,
+            pageCount: d.pageCount,
+            attachedToCurrentMessage: attachedDocumentIds.includes(d.id),
+          })),
+        };
+      } catch (err) {
+        return { ok: false as const, error: err instanceof Error ? err.message : "Failed to list documents." };
       }
     },
   });
@@ -82,5 +156,5 @@ export function createDocumentTools(conversationId: string) {
     },
   });
 
-  return [searchDocumentsTool, getDocumentPageTool] as const;
+  return [searchDocumentsTool, listDocumentsTool, getDocumentPageTool] as const;
 }

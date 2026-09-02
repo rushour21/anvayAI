@@ -36,6 +36,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
 
+  /* Once a document has been sent with a message it is part of the
+     conversation's record — the answer above it cites it, and removing the
+     file would leave those citations pointing at nothing. Only a pending
+     upload (still shown as a chip in the composer, messageId still null) can
+     be removed. The UI hides the remove button in that case; this is the
+     guard for anything calling the API directly. */
+  if (doc.messageId) {
+    return NextResponse.json(
+      { error: "This document was sent with a message and can no longer be removed." },
+      { status: 409 }
+    );
+  }
+
   // document_chunks rows cascade via FK; storage object and Qdrant vectors
   // don't, so clean those up explicitly.
   await deleteFromStorage(doc.storageKey).catch((err) => console.error("[documents] storage delete failed:", err));

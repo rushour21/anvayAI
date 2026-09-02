@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, asc, and, isNull } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { conversation, messages as messagesTable, documents as documentsTable } from "@/db/schema";
 import { getAuthUserId } from "@/lib/auth/requireUser";
 import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agent";
 import { rateLimit, clientIp, RULES } from "@/lib/security/rate-limit";
 import { checkBudget, microsToUsd } from "@/lib/billing/usage";
+import { waitForDocuments } from "@/lib/documents/process";
 import { buildConversationContext } from "@/lib/memory/summarize";
 import { recallRelevant } from "@/lib/memory/user-memory";
 import { selectModel } from "@/lib/ai/model-router";
@@ -117,13 +118,27 @@ export async function POST(
     .set({ messageId: userMessage.id })
     .where(and(eq(documentsTable.conversationId, id), isNull(documentsTable.messageId)));
 
+  /* A PDF attached to this message is very often still parsing right now —
+     processing runs in after() on the upload request, while the user can
+     attach and send immediately. Waiting here (bounded, well inside this
+     route's maxDuration) is what stops the agent treating the new document as
+     absent and quietly answering from an older one in the same conversation.
+     If it still isn't ready, the run continues and the agent is told to say
+     so rather than substituting a different document. */
+  const attachedDocs = await db.query.documents.findMany({
+    where: eq(documentsTable.messageId, userMessage.id),
+  });
+
   /* Phase 8 — instead of resending the whole history every turn, older
      turns are compacted into a rolling summary and only recent ones go
      verbatim. Memory recall runs alongside it (both hit the network, and
-     neither depends on the other). */
+     neither depends on the other), and so does the document wait above —
+     none of the three depends on another, so the wait usually costs nothing
+     beyond what context building already takes. */
   const [context, recalledMemories] = await Promise.all([
     buildConversationContext(id),
     recallRelevant(userId, content),
+    waitForDocuments(attachedDocs.map((d) => d.id)),
   ]);
 
   // Per-message override (AGENTS.md Phase 2 §8) — falls back to the
@@ -136,6 +151,9 @@ export async function POST(
     userId,
     messages: context.messages,
     model: primaryModel,
+    // Lets the agent tell "the PDF the user just attached" apart from
+    // "a PDF uploaded earlier in this conversation".
+    currentMessageId: userMessage.id,
     conversationSummary: context.summary,
     recalledMemories,
   });
