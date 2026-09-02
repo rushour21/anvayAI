@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { agentRuns, toolCalls as toolCallsTable, documents as documentsTable } from "@/db/schema";
 import { getClient, SYSTEM_PROMPT, type ChatMessage } from "./openrouter";
@@ -15,8 +15,80 @@ import type { StopCondition, Tool } from "@openrouter/sdk/lib/tool-types.js";
    model — `model` always comes from lib/ai/model-router.ts's selectModel(),
    called by the route before this function. */
 
+/* Split by relevance to the message being answered, not just "what exists in
+   this conversation". Collapsing these into one list is what let a question
+   about a newly-attached PDF get answered from an older one. */
+export type ConversationDocuments = {
+  /** Ready to search AND attached to the message being answered right now. */
+  attachedReady: string[];
+  /** Attached to this message but not searchable — still processing, or failed. */
+  attachedNotReady: Array<{ filename: string; status: string }>;
+  /** Ready to search, but uploaded earlier in the conversation. */
+  earlierReady: string[];
+};
+
+function documentInstructions(docs: ConversationDocuments): string {
+  const quote = (names: string[]) => names.map((f) => `"${f}"`).join(", ");
+  const parts: string[] = [];
+  const hasAttached = docs.attachedReady.length > 0 || docs.attachedNotReady.length > 0;
+
+  if (docs.attachedReady.length > 0) {
+    parts.push(
+      " The user attached " +
+        quote(docs.attachedReady) +
+        " to the message you are answering right now. That is what they mean by " +
+        '"this document", "the pdf", "this report", and by vague questions like ' +
+        '"explain this" or "summarize this". For ANY question that could plausibly be ' +
+        "about a document, call search_documents FIRST — it defaults to exactly these " +
+        "attached documents. Never answer from a document uploaded earlier in this " +
+        "conversation unless the user explicitly names it or asks you to compare; only " +
+        'then pass scope "all".'
+    );
+  }
+
+  if (docs.attachedNotReady.length > 0) {
+    parts.push(
+      " These documents were attached to this message but are NOT searchable yet: " +
+        docs.attachedNotReady
+          .map(
+            (d) =>
+              `"${d.filename}" (${d.status === "error" ? "failed to process" : "still processing"})`
+          )
+          .join(", ") +
+        ". Say plainly that the file isn't ready yet (or that it failed) and ask the user " +
+        "to send the question again in a moment. Do NOT answer their question from a " +
+        "different document instead, and do not invent another reason for not having it."
+    );
+  }
+
+  if (docs.earlierReady.length > 0) {
+    parts.push(
+      hasAttached
+        ? " Also uploaded earlier in this conversation and still searchable: " +
+            quote(docs.earlierReady) +
+            ". Use them only when the user's question is actually about them — pass " +
+            'scope "all" to search_documents in that case.'
+        : " This conversation has these documents ready to search: " +
+            quote(docs.earlierReady) +
+            ". For ANY question that could plausibly be about a document — including vague " +
+            'ones like "explain this", "summarize this", "what is this about" — call ' +
+            "search_documents FIRST before answering. Never claim no document is attached; " +
+            "one is."
+    );
+  }
+
+  if (parts.length === 0) return "";
+  return (
+    parts.join("") +
+    " Cite results as 'Filename, Page N', never an invented page number, and clearly " +
+    "distinguish evidence from an uploaded document, external financial/market data, and " +
+    "external research from each other. If search_documents finds nothing relevant to the " +
+    "specific question, say that clearly instead of guessing."
+  );
+}
+
 function buildAgentSystemPrompt(
-  readyDocumentFilenames: string[],
+  documentContext: ConversationDocuments,
   conversationSummary: string | null = null,
   recalledMemories: string[] = []
 ): string {
@@ -69,18 +141,7 @@ function buildAgentSystemPrompt(
   "system message and the user's own messages. When the user tells you something durable " +
   "about themselves worth carrying into future conversations, call remember_fact once — " +
   "never for one-off figures or the current question." +
-  (readyDocumentFilenames.length > 0
-    ? " The user has already uploaded and this conversation currently has ready to search: " +
-      readyDocumentFilenames.map((f) => `"${f}"`).join(", ") +
-      ". For ANY question that could plausibly be about a document — including vague ones " +
-      "like \"explain this\", \"summarize this\", \"what is this about\" — call " +
-      "search_documents FIRST before answering. Never claim no document is attached; one is. " +
-      "If search_documents finds nothing relevant to the specific question, say that " +
-      "clearly instead of guessing — but always try the search first. Cite results as " +
-      "'Filename, Page N', never an invented page number, and clearly distinguish evidence " +
-      "from the uploaded document, external financial/market data, and external research " +
-      "from each other."
-    : "") +
+  documentInstructions(documentContext) +
   (conversationSummary
     ? " Earlier in this conversation (compacted, so treat these as established facts " +
       "already discussed rather than something to re-derive): " +
@@ -273,6 +334,7 @@ export async function* runFinancialAgent({
   userId,
   messages,
   model,
+  currentMessageId = null,
   conversationSummary = null,
   recalledMemories = [],
 }: {
@@ -280,6 +342,9 @@ export async function* runFinancialAgent({
   userId: string;
   messages: ChatMessage[];
   model: string;
+  /** The user message being answered — documents tied to it are the ones the
+      user just attached, and are the default search scope for this turn. */
+  currentMessageId?: string | null;
   /** Rolling summary of older turns (lib/memory/summarize.ts). */
   conversationSummary?: string | null;
   /** Durable user facts relevant to this turn (lib/memory/user-memory.ts). */
@@ -287,14 +352,29 @@ export async function* runFinancialAgent({
 }): AsyncGenerator<AgentEvent, { modelUsed: string }, undefined> {
   const [run] = await db.insert(agentRuns).values({ conversationId, model, status: "running" }).returning();
 
-  // Computed once per run, not per candidate — the model has no other way
-  // to know a document is attached, and a weaker/free model won't reliably
-  // infer that from vague phrasing ("explain this pdf") and call the tool
-  // to check on its own.
-  const readyDocs = await db.query.documents.findMany({
-    where: and(eq(documentsTable.conversationId, conversationId), eq(documentsTable.status, "ready")),
+  /* Computed once per run, not per candidate — the model has no other way to
+     know a document is attached, and a weaker/free model won't reliably infer
+     that from vague phrasing ("explain this pdf") and call a tool to check on
+     its own. Every status is loaded, not just "ready": a document that is
+     still processing has to be reported as such, because staying silent about
+     it is exactly what made the agent answer from the previous PDF instead. */
+  const allDocs = await db.query.documents.findMany({
+    where: eq(documentsTable.conversationId, conversationId),
   });
-  const readyDocumentFilenames = readyDocs.map((d) => d.filename);
+  const isAttached = (messageId: string | null) =>
+    currentMessageId !== null && messageId === currentMessageId;
+
+  const attachedReadyDocs = allDocs.filter((d) => isAttached(d.messageId) && d.status === "ready");
+  const documentContext: ConversationDocuments = {
+    attachedReady: attachedReadyDocs.map((d) => d.filename),
+    attachedNotReady: allDocs
+      .filter((d) => isAttached(d.messageId) && d.status !== "ready")
+      .map((d) => ({ filename: d.filename, status: d.status })),
+    earlierReady: allDocs
+      .filter((d) => !isAttached(d.messageId) && d.status === "ready")
+      .map((d) => d.filename),
+  };
+  const attachedDocumentIds = attachedReadyDocs.map((d) => d.id);
 
   const candidates = model === FALLBACK_MODEL ? [model] : [model, FALLBACK_MODEL];
   let lastError: unknown = null;
@@ -313,13 +393,13 @@ export async function* runFinancialAgent({
 
     const tools = instrumentTools(run.id, [
       ...financialAgentTools,
-      ...createDocumentTools(conversationId),
+      ...createDocumentTools(conversationId, attachedDocumentIds),
       ...createMemoryTools(userId),
     ] as unknown as Tool[]);
     const result = getClient().callModel({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),
-      instructions: buildAgentSystemPrompt(readyDocumentFilenames, conversationSummary, recalledMemories),
+      instructions: buildAgentSystemPrompt(documentContext, conversationSummary, recalledMemories),
       // Left unset, this defaults to 16384 — comfortably more than a
       // financial analysis answer needs, and the exact number behind the
       // recurring "requested up to 16384 tokens, but can only afford ..."

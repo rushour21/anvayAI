@@ -431,6 +431,13 @@ export const useChatStore = create<ChatState>((set, get) => {
   },
 
   deleteDocument: async (id) => {
+    /* Only a pending upload can be removed. Once a document has been sent
+       with a message the answer above it may cite it, so it stays — the
+       chip renders without a remove button (MessageDocuments.tsx) and the
+       API returns 409. Guarded here too so a stale click can't optimistically
+       drop it from the UI and leave the list disagreeing with the server. */
+    const doc = get().documents.find((d) => d.id === id);
+    if (!doc || doc.messageId) return;
     set((s) => ({ documents: s.documents.filter((d) => d.id !== id) }));
     await fetch(`/api/documents/${id}`, { method: "DELETE" }).catch(() => {});
   },

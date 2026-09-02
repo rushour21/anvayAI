@@ -48,13 +48,26 @@ export async function upsertChunks(
 export async function searchChunks(
   vector: number[],
   conversationId: string,
-  limit = 5
+  limit = 5,
+  /* Restricts the search to specific documents. Without this the top-k is a
+     free-for-all across every document ever uploaded to the conversation, so
+     a question about a just-attached PDF gets answered from an older, longer
+     one that happened to score higher — silently, and about the wrong file.
+     `documentId` already has a payload index (see ensureCollection), which
+     Qdrant requires for any field used in a filter. */
+  documentIds?: string[]
 ): Promise<Array<{ score: number; payload: ChunkPayload }>> {
   await ensureCollection();
+  const must: Array<Record<string, unknown>> = [
+    { key: "conversationId", match: { value: conversationId } },
+  ];
+  if (documentIds && documentIds.length > 0) {
+    must.push({ key: "documentId", match: { any: documentIds } });
+  }
   const result = await getClient().query(COLLECTION, {
     query: vector,
     limit,
-    filter: { must: [{ key: "conversationId", match: { value: conversationId } }] },
+    filter: { must },
     with_payload: true,
   });
   return result.points.map((r) => ({ score: r.score, payload: r.payload as unknown as ChunkPayload }));
