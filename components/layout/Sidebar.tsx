@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AnvayMark from "@/components/ui/AnvayMark";
 import Icon from "@/components/ui/Icon";
@@ -7,6 +8,8 @@ import SidebarLogo from "@/components/sidebar/SidebarLogo";
 import SidebarToggle from "@/components/sidebar/SidebarToggle";
 import NewChatButton from "@/components/sidebar/NewChatButton";
 import ChatHistoryList from "@/components/sidebar/ChatHistoryList";
+import ProjectList from "@/components/sidebar/ProjectList";
+import CreateProjectDialog from "@/components/projects/CreateProjectDialog";
 import UserChip from "@/components/sidebar/UserChip";
 import { useChatStore } from "@/stores/chatStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -15,10 +18,12 @@ import { getInitials } from "@/lib/initials";
 
 export default function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
+  const [creatingProject, setCreatingProject] = useState(false);
 
   if (collapsed) return <CollapsedRail />;
 
   return (
+    <>
     <aside
       className="hidden lg:flex flex-col h-full overflow-hidden shrink-0"
       style={{
@@ -37,9 +42,7 @@ export default function Sidebar() {
       <div className="mt-4 flex flex-col gap-1.5">
         <NewChatButton />
         <button
-          onClick={() => {
-            /* TODO: wire to project creation flow */
-          }}
+          onClick={() => setCreatingProject(true)}
           className="btn w-full py-2 text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
           style={{
             background: "transparent",
@@ -62,6 +65,7 @@ export default function Sidebar() {
       </div>
 
       <div className="mt-3 flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">
+        <ProjectList />
         <ChatHistoryList />
       </div>
 
@@ -69,6 +73,8 @@ export default function Sidebar() {
         <UserChip />
       </div>
     </aside>
+    {creatingProject && <CreateProjectDialog onClose={() => setCreatingProject(false)} />}
+    </>
   );
 }
 

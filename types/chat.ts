@@ -27,4 +27,7 @@ export interface Chat {
   messages: Message[];
   createdAt: number;
   updatedAt: number;
+  /** Null for an unfiled chat. Project chats are listed under their project
+      in the sidebar rather than in the flat recents list. */
+  projectId?: string | null;
 }

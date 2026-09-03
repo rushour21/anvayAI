@@ -89,6 +89,10 @@ export async function POST(req: NextRequest) {
       id: documentId,
       conversationId,
       userId,
+      /* Stamped from the conversation so the file is searchable from every
+         other conversation in the same project — otherwise a 10-K uploaded
+         on Monday is invisible on Tuesday and gets re-uploaded and re-parsed. */
+      projectId: convo.projectId,
       filename: file.name,
       storageKey,
       status: "uploaded",

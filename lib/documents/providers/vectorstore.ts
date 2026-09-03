@@ -50,20 +50,24 @@ export async function searchChunks(
   conversationId: string,
   limit = 5,
   /* Restricts the search to specific documents. Without this the top-k is a
-     free-for-all across every document ever uploaded to the conversation, so
-     a question about a just-attached PDF gets answered from an older, longer
-     one that happened to score higher — silently, and about the wrong file.
-     `documentId` already has a payload index (see ensureCollection), which
-     Qdrant requires for any field used in a filter. */
+     free-for-all across every document ever uploaded, so a question about a
+     just-attached PDF gets answered from an older, longer one that happened
+     to score higher — silently, and about the wrong file.
+
+     When these ids are given they REPLACE the conversation filter rather than
+     narrowing it: a project-scoped search deliberately reaches documents
+     uploaded in sibling conversations, which an AND on conversationId would
+     exclude. Safe because the ids are always resolved server-side from an
+     ownership-checked Postgres query (lib/documents/scope.ts) and are never
+     supplied by the model. `documentId` already has a payload index (see
+     ensureCollection), which Qdrant requires for any filtered field. */
   documentIds?: string[]
 ): Promise<Array<{ score: number; payload: ChunkPayload }>> {
   await ensureCollection();
-  const must: Array<Record<string, unknown>> = [
-    { key: "conversationId", match: { value: conversationId } },
-  ];
-  if (documentIds && documentIds.length > 0) {
-    must.push({ key: "documentId", match: { any: documentIds } });
-  }
+  const must: Array<Record<string, unknown>> =
+    documentIds && documentIds.length > 0
+      ? [{ key: "documentId", match: { any: documentIds } }]
+      : [{ key: "conversationId", match: { value: conversationId } }];
   const result = await getClient().query(COLLECTION, {
     query: vector,
     limit,

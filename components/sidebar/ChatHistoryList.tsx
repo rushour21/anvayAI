@@ -18,30 +18,29 @@ export default function ChatHistoryList() {
     loadChatHistory();
   }, [loadChatHistory]);
 
+  /* Project conversations are listed under their project (ProjectList.tsx),
+     not here — otherwise every chat appears twice and the recents list stops
+     being a useful "what was I just doing". */
+  const unfiled = chatHistory.filter((c) => !c.projectId);
+
   /* Bucketed against the store's fixed reference clock rather than a live
      Date.now(), which would be impure in render and desync hydration. */
   const now = SESSION_START;
   const groups = [
-    { label: "Today", items: chatHistory.filter((c) => now - c.createdAt < DAY) },
+    { label: "Today", items: unfiled.filter((c) => now - c.createdAt < DAY) },
     {
       label: "Yesterday",
-      items: chatHistory.filter(
+      items: unfiled.filter(
         (c) => now - c.createdAt >= DAY && now - c.createdAt < 2 * DAY
       ),
     },
     {
       label: "Earlier",
-      items: chatHistory.filter((c) => now - c.createdAt >= 2 * DAY),
+      items: unfiled.filter((c) => now - c.createdAt >= 2 * DAY),
     },
   ].filter((g) => g.items.length > 0);
 
-  if (groups.length === 0) {
-    return (
-      <p className="px-2.5 py-6 text-[13px]" style={{ color: "var(--ink-400)" }}>
-        No conversations yet.
-      </p>
-    );
-  }
+  if (groups.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-1">

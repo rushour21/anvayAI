@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgEnum, integer, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, pgEnum, integer, boolean, index, jsonb, primaryKey } from "drizzle-orm/pg-core";
 
 /* Matches lib/auth/types.ts's PlanTier — kept in sync by hand for now.
    Adding "team" / "enterprise" later (docs/PRD.md §9) is a value added
@@ -18,10 +18,43 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/* A project is how an analyst organizes work: a coverage list, a deal, a
+   situation. Deliberately NOT one company — analysts cover 15-60 names, so a
+   single comp sheet spans several tickers and one ticker shows up in several
+   projects. `tickers` is therefore a plain array, not a foreign key.
+
+   A project is an organizing unit inside ONE user's account, never a tenancy
+   boundary — docs/CONTEXT-AND-MEMORY.md rules out workspaces/teams for v1, and
+   nothing here changes that. Everything stays owned by user_id. */
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    name: text("name").notNull(),
+    tickers: text("tickers").array().notNull().default([]),
+    /* The analyst's current view — rating, price target, the live debate. The
+       one thing they carry that isn't a file, and what makes "what changed
+       since last time" answerable. */
+    thesis: text("thesis"),
+    openQuestions: text("open_questions").array().notNull().default([]),
+    /* Powers the overview's "changed since you last looked" section. Null
+       until the project is opened for the first time. */
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("projects_user_idx").on(t.userId, t.updatedAt)]
+);
+
 export const conversation = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   userId: uuid("user_id").references(() => users.id).notNull(),
+  /* Nullable on purpose: projects are optional and lazy. A conversation with
+     no project still works exactly as before — requiring one up front would
+     put a "create a project first" wall in front of the first question. */
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
   modelMode: modelMode("model_mode").notNull().default("auto"),
   /* Phase 8 rolling summary — replaces the older half of a long
      conversation so each turn stops resending the entire history.
@@ -32,7 +65,10 @@ export const conversation = pgTable("conversations", {
   summarizedThrough: timestamp("summarized_through", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-})
+},
+  // Filtered on every project overview and project-scoped sidebar fetch.
+  (t) => [index("conversations_project_idx").on(t.projectId)]
+)
 
 export const messages = pgTable("messages",{
   id: uuid("id").primaryKey().defaultRandom(),
@@ -77,6 +113,11 @@ export const documents = pgTable("documents", {
   id: uuid("id").primaryKey().defaultRandom(),
   conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "cascade" }).notNull(),
   userId: uuid("user_id").references(() => users.id).notNull(),
+  /* Stamped from the conversation's project at upload time. This is what lets
+     a 10-K uploaded in one conversation be searchable from every other
+     conversation in the same project — previously it was invisible outside the
+     conversation it was uploaded to. */
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
   /* Null while "pending" (uploaded but no message sent yet — still shown in
      the composer). Set to the user message's id once that message is sent,
      so the frontend can render the document's chip in chat history at that
@@ -89,7 +130,11 @@ export const documents = pgTable("documents", {
   error: text("error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+},
+  /* resolveDocumentScope() filters by project_id on every project-scoped
+     document search — without this it's a sequential scan per query. */
+  (t) => [index("documents_project_idx").on(t.projectId)]
+);
 
 export const documentChunks = pgTable("document_chunks", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -146,4 +191,51 @@ export const userMemories = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("user_memories_user_idx").on(t.userId)]
+);
+
+
+export const artifactKind = pgEnum("artifact_kind", ["sheet", "note"]);
+
+/* An artifact is the durable output of research — a comp sheet, an earnings
+   note. Unlike a chat message it survives the conversation, carries a source
+   for every number, and keeps the `spec` (the recipe: which tickers, metrics
+   and periods produced it) so it can be rebuilt next quarter instead of
+   retyped. That last property is the one no general assistant has. */
+export const artifacts = pgTable(
+  "artifacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    /* Cascades: an artifact belongs to its project. Conversations and
+       documents only SET NULL, because those outlive a project being tidied
+       away — an artifact does not. */
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id").references(() => conversation.id, { onDelete: "set null" }),
+    kind: artifactKind("kind").notNull(),
+    title: text("title").notNull(),
+    spec: jsonb("spec"),
+    currentVersion: integer("current_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("artifacts_project_idx").on(t.projectId, t.updatedAt)]
+);
+
+/* Immutable snapshots. Cell-level provenance lives inside `content` rather
+   than a separate table, so it versions along with the values it describes
+   for free — see types/artifact.ts for the shape. */
+export const artifactVersions = pgTable(
+  "artifact_versions",
+  {
+    artifactId: uuid("artifact_id").references(() => artifacts.id, { onDelete: "cascade" }).notNull(),
+    version: integer("version").notNull(),
+    content: jsonb("content").notNull(),
+    author: text("author").notNull(), // "agent" | "user"
+    summary: text("summary"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.artifactId, t.version] }),
+    index("artifact_versions_artifact_idx").on(t.artifactId, t.version),
+  ]
 );

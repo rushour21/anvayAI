@@ -7,6 +7,7 @@ import { runFinancialAgent, describeError, type AgentEvent } from "@/lib/ai/agen
 import { rateLimit, clientIp, RULES } from "@/lib/security/rate-limit";
 import { checkBudget, microsToUsd } from "@/lib/billing/usage";
 import { waitForDocuments } from "@/lib/documents/process";
+import { autoSaveTableArtifact } from "@/lib/artifacts/auto-save";
 import { buildConversationContext } from "@/lib/memory/summarize";
 import { recallRelevant } from "@/lib/memory/user-memory";
 import { selectModel } from "@/lib/ai/model-router";
@@ -154,6 +155,9 @@ export async function POST(
     // Lets the agent tell "the PDF the user just attached" apart from
     // "a PDF uploaded earlier in this conversation".
     currentMessageId: userMessage.id,
+    // Widens document search to the whole project and gives the agent the
+    // analyst's standing view (thesis, open questions, covered tickers).
+    projectId: convo.projectId,
     conversationSummary: context.summary,
     recalledMemories,
   });
@@ -173,6 +177,9 @@ export async function POST(
   const encoder = new TextEncoder();
   let fullText = "";
   let modelUsed = primaryModel;
+  /* Marks this run, so the auto-save below can tell an artifact the agent
+     created itself from one that already existed. */
+  const runStartedAt = new Date();
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -214,6 +221,15 @@ export async function POST(
             .update(conversation)
             .set({ updatedAt: new Date() })
             .where(eq(conversation.id, id));
+          // Net for a table the agent answered with but didn't save itself.
+          await autoSaveTableArtifact({
+            userId,
+            conversationId: id,
+            projectId: convo.projectId,
+            answer: fullText,
+            fallbackTitle: content,
+            since: runStartedAt,
+          });
         }
       }
     },
