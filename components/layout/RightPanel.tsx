@@ -1,16 +1,33 @@
 "use client";
 
+import { useEffect } from "react";
 import Icon from "@/components/ui/Icon";
+import ArtifactList from "@/components/workspace/ArtifactList";
+import ArtifactView from "@/components/workspace/ArtifactView";
 import { useUIStore } from "@/stores/uiStore";
+import { useChatStore } from "@/stores/chatStore";
+import { useArtifactStore } from "@/stores/artifactStore";
 import ResizeHandle from "./ResizeHandle";
 
-/* The workspace panel — where a generated comp sheet, an uploaded Excel
-   file, or an exported document will open. No real content lives here
-   yet; this is the shell, honest about having nothing to show. */
+/* The workspace panel — saved artifacts (comp sheets, notes) for the current
+   conversation. Shows the list, or one artifact when opened. */
 export default function RightPanel() {
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const rightPanelWidth = useUIStore((s) => s.rightPanelWidth);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
+
+  const activeChatId = useChatStore((s) => s.activeChatId);
+  const active = useArtifactStore((s) => s.active);
+  const loadForConversation = useArtifactStore((s) => s.loadForConversation);
+  const clear = useArtifactStore((s) => s.clear);
+
+  /* Refetched whenever the panel opens or the conversation changes — an agent
+     run can create an artifact at any point, and the list is cheap. */
+  useEffect(() => {
+    if (!rightPanelOpen) return;
+    if (activeChatId) loadForConversation(activeChatId);
+    else clear();
+  }, [rightPanelOpen, activeChatId, loadForConversation, clear]);
 
   if (!rightPanelOpen) return null;
 
@@ -54,20 +71,7 @@ export default function RightPanel() {
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 text-center">
-          <span
-            className="flex items-center justify-center rounded-2xl mb-3"
-            style={{ width: 44, height: 44, background: "var(--paper-sunk)", color: "var(--ink-300)" }}
-          >
-            <Icon name="layers" size={20} />
-          </span>
-          <p className="text-[13px] font-medium" style={{ color: "var(--ink-700)" }}>
-            Nothing open yet
-          </p>
-          <p className="text-[12.5px] mt-1.5" style={{ color: "var(--ink-400)", maxWidth: "26ch" }}>
-            Generated comp sheets, exports, and uploaded files will appear here.
-          </p>
-        </div>
+        {active ? <ArtifactView /> : <ArtifactList />}
       </aside>
     </>
   );

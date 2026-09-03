@@ -17,6 +17,11 @@ interface ChatState {
   /* Documents attached to the current conversation */
   documents: DocumentAttachment[];
 
+  /* Set when a chat is started from inside a project (/chat/new?projectId=).
+     Carried onto the conversation at creation time so everything in it —
+     documents especially — lands in that project. */
+  pendingProjectId: string | null;
+
   /* Agent pill toggles (empty state) */
   activeAgents: AgentRole[];
 
@@ -37,6 +42,7 @@ interface ChatState {
   toggleAgent: (agent: AgentRole) => void;
   setSelectedModel: (model: ModelMeta) => void;
   setActiveChatId: (id: string | null) => void;
+  setPendingProjectId: (id: string | null) => void;
   clearMessages: () => void;
   sendMessage: (content: string) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
@@ -108,6 +114,7 @@ export const useChatStore = create<ChatState>((set, get) => {
   isStreaming: false,
   traceSteps: [],
   documents: [],
+  pendingProjectId: null,
   activeAgents: [...EMPTY_STATE_AGENTS],
   selectedModel: DEFAULT_MODEL,
   chatHistory: [],
@@ -156,6 +163,7 @@ export const useChatStore = create<ChatState>((set, get) => {
     })),
   setSelectedModel: (model) => set({ selectedModel: model }),
   setActiveChatId: (id) => set({ activeChatId: id }),
+  setPendingProjectId: (id) => set({ pendingProjectId: id }),
   clearMessages: () => set({ messages: [], traceSteps: [], documents: [] }),
 
   loadChatHistory: async () => {
@@ -164,6 +172,7 @@ export const useChatStore = create<ChatState>((set, get) => {
     const data = (await res.json()) as Array<{
       id: string;
       title: string;
+      projectId: string | null;
       createdAt: string;
       updatedAt: string;
     }>;
@@ -172,6 +181,7 @@ export const useChatStore = create<ChatState>((set, get) => {
         id: c.id,
         title: c.title,
         messages: [],
+        projectId: c.projectId,
         createdAt: new Date(c.createdAt).getTime(),
         updatedAt: new Date(c.updatedAt).getTime(),
       })),
@@ -253,17 +263,28 @@ export const useChatStore = create<ChatState>((set, get) => {
         const createRes = await fetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, modelMode: selectedModel.id }),
+          body: JSON.stringify({ title, modelMode: selectedModel.id, projectId: get().pendingProjectId }),
         });
         if (!createRes.ok) throw new Error("Failed to create conversation");
-        const created = (await createRes.json()) as { id: string; title: string };
+        const created = (await createRes.json()) as {
+          id: string;
+          title: string;
+          projectId: string | null;
+        };
         chatId = created.id;
 
         const now = Date.now();
         set((s) => ({
           activeChatId: chatId,
           chatHistory: [
-            { id: chatId!, title: created.title, messages: [], createdAt: now, updatedAt: now },
+            {
+              id: chatId!,
+              title: created.title,
+              messages: [],
+              projectId: created.projectId,
+              createdAt: now,
+              updatedAt: now,
+            },
             ...s.chatHistory,
           ],
         }));
@@ -308,6 +329,21 @@ export const useChatStore = create<ChatState>((set, get) => {
           startTraceStep(event.tool);
         } else if (event.type === "tool_complete") {
           updateTraceStep(event.tool, "complete");
+          /* The agent just saved something the analyst keeps — surface it
+             rather than leaving them to discover the panel on their own.
+             Imported lazily to keep chatStore free of a static dependency on
+             the artifact/ui stores. */
+          if (event.tool === "create_artifact") {
+            void (async () => {
+              const [{ useUIStore }, { useArtifactStore }] = await Promise.all([
+                import("@/stores/uiStore"),
+                import("@/stores/artifactStore"),
+              ]);
+              useUIStore.getState().openRightPanel();
+              const chatId = get().activeChatId;
+              if (chatId) await useArtifactStore.getState().loadForConversation(chatId);
+            })();
+          }
         }
       };
 
@@ -340,6 +376,15 @@ export const useChatStore = create<ChatState>((set, get) => {
           c.id === finishedId ? { ...c, updatedAt: Date.now() } : c
         ),
       }));
+
+      /* The server's auto-save net (lib/artifacts/auto-save.ts) runs AFTER
+         the stream closes, so unlike the create_artifact tool path it emits
+         no tool_complete event to react to. Refetch once here, or a recovered
+         table would sit invisible until the panel was reopened. */
+      if (finishedId) {
+        const { useArtifactStore } = await import("@/stores/artifactStore");
+        await useArtifactStore.getState().loadForConversation(finishedId);
+      }
     } catch {
       addMessage({
         id: crypto.randomUUID(),
@@ -369,17 +414,28 @@ export const useChatStore = create<ChatState>((set, get) => {
         const createRes = await fetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, modelMode: get().selectedModel.id }),
+          body: JSON.stringify({ title, modelMode: get().selectedModel.id, projectId: get().pendingProjectId }),
         });
         if (!createRes.ok) throw new Error("Failed to create conversation");
-        const created = (await createRes.json()) as { id: string; title: string };
+        const created = (await createRes.json()) as {
+          id: string;
+          title: string;
+          projectId: string | null;
+        };
         chatId = created.id;
 
         const now = Date.now();
         set((s) => ({
           activeChatId: chatId,
           chatHistory: [
-            { id: chatId!, title: created.title, messages: [], createdAt: now, updatedAt: now },
+            {
+              id: chatId!,
+              title: created.title,
+              messages: [],
+              projectId: created.projectId,
+              createdAt: now,
+              updatedAt: now,
+            },
             ...s.chatHistory,
           ],
         }));

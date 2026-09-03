@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Wordmark from "@/components/ui/Wordmark";
@@ -15,9 +15,12 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const inFlight = useRef(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError(null);
     setSubmitting(true);
     try {
@@ -26,6 +29,7 @@ export default function RegisterPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed.");
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };

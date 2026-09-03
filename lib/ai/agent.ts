@@ -1,11 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { agentRuns, toolCalls as toolCallsTable, documents as documentsTable } from "@/db/schema";
+import { agentRuns, toolCalls as toolCallsTable, documents as documentsTable, projects as projectsTable } from "@/db/schema";
 import { getClient, SYSTEM_PROMPT, type ChatMessage } from "./openrouter";
 import { FALLBACK_MODEL } from "./models";
 import { financialAgentTools } from "./tools";
 import { createDocumentTools } from "./tools/documents";
 import { createMemoryTools } from "./tools/memory";
+import { createArtifactTools } from "./tools/artifacts";
+import { createProjectTools } from "./tools/project";
 import { recordUsage, type RunUsage } from "@/lib/billing/usage";
 import { stepCountIs } from "@openrouter/sdk/lib/stop-conditions.js";
 import { isToolResultEvent, isTurnStartEvent } from "@openrouter/sdk/lib/tool-types.js";
@@ -87,8 +89,51 @@ function documentInstructions(docs: ConversationDocuments): string {
   );
 }
 
+/* What the analyst is working on, when the conversation belongs to a project.
+   Without this the agent has no idea the user covers a set of companies, or
+   what view they already hold — and re-derives both every session. */
+export type ProjectContext = {
+  name: string;
+  tickers: string[];
+  thesis: string | null;
+  openQuestions: string[];
+};
+
+function projectInstructions(project: ProjectContext | null): string {
+  if (!project) return "";
+  const parts = [
+    ` This conversation belongs to the research project "${project.name}".`,
+  ];
+  if (project.tickers.length > 0) {
+    parts.push(
+      ` It covers ${project.tickers.join(", ")} — when the user names a company without a ` +
+        "ticker, resolve it against that list first."
+    );
+  }
+  if (project.thesis) {
+    parts.push(
+      ` The analyst's current view on record is: "${project.thesis}". Treat it as THEIR ` +
+        "position, not a fact you verified. When new evidence supports or contradicts it, " +
+        "say so explicitly — that comparison is the most useful thing you can offer them."
+    );
+  }
+  if (project.openQuestions.length > 0) {
+    parts.push(
+      " Open questions they still want answered: " +
+        project.openQuestions.map((q) => `"${q}"`).join("; ") +
+        ". If something in this conversation resolves one, point that out."
+    );
+  }
+  parts.push(
+    " Documents uploaded anywhere in this project are searchable from here — do not tell " +
+      "the user to re-upload a file they added in another conversation in this project."
+  );
+  return parts.join("");
+}
+
 function buildAgentSystemPrompt(
   documentContext: ConversationDocuments,
+  projectContext: ProjectContext | null,
   conversationSummary: string | null = null,
   recalledMemories: string[] = []
 ): string {
@@ -117,7 +162,8 @@ function buildAgentSystemPrompt(
   "never fill the gap with an invented number, filing, or source. You do not need a tool to " +
   "answer general definitional questions (e.g. \"what is a P/E ratio\"). Only call the " +
   "tools actually needed for the question — don't call every financial tool for every " +
-  "message. When a tool result includes a source (a filing, a search result, a named data " +
+  "message (create_artifact is the one exception — see below). When a tool result " +
+  "includes a source (a filing, a search result, a named data " +
   "provider), cite it by name in your answer; if a fact has no source attached, don't " +
   "invent one. Clearly separate what the data says, what a calculation computed, and what " +
   "is your own analysis — don't present your interpretation as a verified fact. search_web " +
@@ -141,7 +187,38 @@ function buildAgentSystemPrompt(
   "system message and the user's own messages. When the user tells you something durable " +
   "about themselves worth carrying into future conversations, call remember_fact once — " +
   "never for one-off figures or the current question." +
+  projectInstructions(projectContext) +
   documentInstructions(documentContext) +
+  " THE WORKSPACE — this is a hard rule, and the one place you should call tools the " +
+  "question did not directly ask for. The analyst is building up a small number of living " +
+  "sheets over time, not collecting a pile of one-off tables. So:" +
+  " (1) BEFORE creating anything, call list_artifacts whenever the request could relate to " +
+  "something already saved — \"add Intel to that\", \"update it\", \"now do FY26\", " +
+  "\"what about margins too\", or any follow-up in a conversation where a sheet already " +
+  "exists. If a relevant sheet is there, call read_artifact then update_artifact. NEVER " +
+  "create a second sheet covering the same ground; extend the existing one." +
+  " (2) update_artifact takes ONLY the operations that change — one set_cell per corrected " +
+  "figure, add_column for a new period, add_row for a new metric. Never resend the whole " +
+  "sheet: untouched cells keep their formulas and sources exactly as they are, and that is " +
+  "what makes the sheet trustworthy. Address rows by { column, equals } matching a value, " +
+  "never by index." +
+  " (3) Create a NEW artifact with create_artifact only when nothing relevant exists and " +
+  "your answer contains a real table of figures, or is a note the analyst would send on. " +
+  "Attach a source to every numeric cell, and use `formula` for any cell computed from " +
+  "other cells rather than read from a source." +
+  " (3a) In a formula, reference other cells as [[row label|column key]] — for example " +
+  "\"[[Operating income|nvda_fy25]]/[[Revenue|nvda_fy25]]\". NEVER write spreadsheet " +
+  "refs like C5/B3: you cannot know where a cell ends up in the grid, and a wrong ref " +
+  "divides by a different year's figure and looks plausible while being wrong. Both sides " +
+  "of a margin must use the SAME period column." +
+  " (4) Skip the workspace entirely for a single fact, a definition, or a one-off " +
+  "calculation with no table." +
+  " (5) WHAT YOU WRITE IN CHAT still matters. Saving is not the answer. Always give your " +
+  "actual analysis in the message: the two or three things that stand out in the numbers, " +
+  "what drove them, and what it means for the company — with sources. What you may skip is " +
+  "re-printing the full table, since the analyst can see it in the panel. End with one " +
+  "short line naming what you saved or changed (e.g. \"Added FY26E to the NVDA comp " +
+  "sheet\"). Never reply with only a line about saving." +
   (conversationSummary
     ? " Earlier in this conversation (compacted, so treat these as established facts " +
       "already discussed rather than something to re-derive): " +
@@ -335,6 +412,7 @@ export async function* runFinancialAgent({
   messages,
   model,
   currentMessageId = null,
+  projectId = null,
   conversationSummary = null,
   recalledMemories = [],
 }: {
@@ -345,6 +423,9 @@ export async function* runFinancialAgent({
   /** The user message being answered — documents tied to it are the ones the
       user just attached, and are the default search scope for this turn. */
   currentMessageId?: string | null;
+  /** The conversation's project, when it belongs to one. Widens document
+      search to the whole project and gives the agent the analyst's view. */
+  projectId?: string | null;
   /** Rolling summary of older turns (lib/memory/summarize.ts). */
   conversationSummary?: string | null;
   /** Durable user facts relevant to this turn (lib/memory/user-memory.ts). */
@@ -376,6 +457,18 @@ export async function* runFinancialAgent({
   };
   const attachedDocumentIds = attachedReadyDocs.map((d) => d.id);
 
+  const project = projectId
+    ? await db.query.projects.findFirst({ where: eq(projectsTable.id, projectId) })
+    : null;
+  const projectContext: ProjectContext | null = project
+    ? {
+        name: project.name,
+        tickers: project.tickers,
+        thesis: project.thesis,
+        openQuestions: project.openQuestions,
+      }
+    : null;
+
   const candidates = model === FALLBACK_MODEL ? [model] : [model, FALLBACK_MODEL];
   let lastError: unknown = null;
 
@@ -393,13 +486,20 @@ export async function* runFinancialAgent({
 
     const tools = instrumentTools(run.id, [
       ...financialAgentTools,
-      ...createDocumentTools(conversationId, attachedDocumentIds),
+      ...createDocumentTools(conversationId, attachedDocumentIds, projectId),
       ...createMemoryTools(userId),
+      ...createArtifactTools(conversationId, projectId, userId),
+      ...createProjectTools(projectId),
     ] as unknown as Tool[]);
     const result = getClient().callModel({
       model: candidateModel,
       input: messages.map((m) => ({ role: m.role, content: m.content })),
-      instructions: buildAgentSystemPrompt(documentContext, conversationSummary, recalledMemories),
+      instructions: buildAgentSystemPrompt(
+        documentContext,
+        projectContext,
+        conversationSummary,
+        recalledMemories
+      ),
       // Left unset, this defaults to 16384 — comfortably more than a
       // financial analysis answer needs, and the exact number behind the
       // recurring "requested up to 16384 tokens, but can only afford ..."

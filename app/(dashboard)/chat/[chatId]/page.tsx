@@ -6,18 +6,26 @@ import ChatContainer from "@/components/chat/ChatContainer";
 import InputCard from "@/components/input/InputCard";
 import { useChatStore } from "@/stores/chatStore";
 
-/** Consumes the `?q=` handed over from the landing hero, exactly once. */
+/** Consumes the `?q=` handed over from the landing hero, exactly once, and
+    the `?projectId=` handed over when a chat is started from a project. */
 function QueryHandoff() {
   const params = useSearchParams();
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const setPendingProjectId = useChatStore((s) => s.setPendingProjectId);
   const fired = useRef(false);
+
+  /* Applied before any send, so the conversation is created inside the
+     project rather than being reassigned afterwards. */
+  useEffect(() => {
+    setPendingProjectId(params.get("projectId"));
+  }, [params, setPendingProjectId]);
 
   useEffect(() => {
     const q = params.get("q")?.trim();
     if (!q || fired.current) return;
     fired.current = true;
     sendMessage(q);
-    /* Drop the param so a refresh doesn't re-ask the same question. */
+    /* Drop the params so a refresh doesn't re-ask the same question. */
     window.history.replaceState(null, "", window.location.pathname);
   }, [params, sendMessage]);
 
